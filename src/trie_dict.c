@@ -162,19 +162,26 @@ TRIE_NODE *trie_dict_create(void)
 {
 	TRIE_NODE *p_dict = NULL;
 
-	if (p_trie_node_pool != NULL && p_trie_node_pool->p_node_free_list != NULL)
+	if (p_trie_node_pool == NULL)
 	{
-		p_dict = p_trie_node_pool->p_node_free_list;
-		p_trie_node_pool->p_node_free_list = p_dict->p_nodes[0];
-
-		memset(p_dict, 0, sizeof(*p_dict));
-
-		p_trie_node_pool->node_count++;
+		log_error("trie_dict_pool not initialized");
+		return NULL;
 	}
-	else if (p_trie_node_pool != NULL)
+
+	log_debug("trie_dict_node used %d of %d", p_trie_node_pool->node_count, p_trie_node_pool->node_count_limit);
+
+	if (p_trie_node_pool->p_node_free_list == NULL)
 	{
 		log_error("trie_dict_create() error: node depleted %d >= %d", p_trie_node_pool->node_count, p_trie_node_pool->node_count_limit);
+		return NULL;
 	}
+
+	p_dict = p_trie_node_pool->p_node_free_list;
+	p_trie_node_pool->p_node_free_list = p_dict->p_nodes[0];
+
+	memset(p_dict, 0, sizeof(*p_dict));
+
+	p_trie_node_pool->node_count++;
 
 	return p_dict;
 }
