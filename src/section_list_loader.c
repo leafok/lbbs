@@ -160,10 +160,7 @@ int load_section_config_from_db(int update_gen_ex)
 		{
 			snprintf(ex_menu_conf, sizeof(ex_menu_conf), "%s/%d", VAR_GEN_EX_MENU_DIR, p_section->sid);
 
-			if (detach_menu_shm(&(p_section->ex_menu_set)) < 0)
-			{
-				log_error("detach_menu_shm(%s) error", ex_menu_conf);
-			}
+			unload_menu(&(p_section->ex_menu_set));
 			if (load_menu(&(p_section->ex_menu_set), ex_menu_conf) < 0)
 			{
 				log_error("load_menu(%s) error", ex_menu_conf);
