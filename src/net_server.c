@@ -830,20 +830,14 @@ int net_server(const char *hostaddr, in_port_t port[])
 				BBS_eula_tm = file_stat.st_mtim.tv_sec;
 			}
 
-			if (detach_menu_shm(&bbs_menu) < 0)
-			{
-				log_error("detach_menu_shm(bbs_menu) error");
-			}
+			unload_menu(&bbs_menu);
 			if (load_menu(&bbs_menu, CONF_MENU) < 0)
 			{
 				log_error("load_menu(bbs_menu) error");
 				unload_menu(&bbs_menu);
 			}
 
-			if (detach_menu_shm(&top10_menu) < 0)
-			{
-				log_error("detach_menu_shm(top10_menu) error");
-			}
+			unload_menu(&top10_menu);
 			if (load_menu(&top10_menu, CONF_TOP10_MENU) < 0)
 			{
 				log_error("load_menu(top10_menu) error");

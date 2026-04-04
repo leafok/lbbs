@@ -887,14 +887,23 @@ int section_list_append_article(SECTION_LIST *p_section, const ARTICLE *p_articl
 		if (p_topic_head == NULL)
 		{
 			log_error("search head of topic (aid=%d) error", p_article->tid);
-			return -4;
-		}
 
-		p_topic_tail = p_topic_head->p_topic_prior;
-		if (p_topic_tail == NULL)
+			p_article->tid = 0;		// Reset tid to 0 to avoid linking to non-existing topic
+			p_article->visible = 0; // Set invisible to avoid being displayed in topic list
+
+			p_section->topic_count++;
+
+			p_topic_head = p_article;
+			p_topic_tail = p_article;
+		}
+		else
 		{
-			log_error("tail of topic (aid=%d) is NULL", p_article->tid);
-			return -4;
+			p_topic_tail = p_topic_head->p_topic_prior;
+			if (p_topic_tail == NULL)
+			{
+				log_error("tail of topic (aid=%d) is NULL", p_article->tid);
+				return -4;
+			}
 		}
 	}
 	else

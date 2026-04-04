@@ -7,6 +7,6 @@
     create 640 bbs bbs
     sharedscripts
     postrotate
-        systemctl reload bbsd.service > /dev/null 2>/dev/null || true
+        systemctl reload lbbs.service > /dev/null 2>/dev/null || true
     endscript
 }
