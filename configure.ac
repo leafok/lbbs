@@ -87,7 +87,7 @@ AC_PROG_EGREP
 
 AC_HEADER_RESOLV
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h iconv.h libssh/libssh.h mysql.h netdb.h netinet/in.h pcre2.h pty.h \
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h iconv.h libssh/libssh.h mysql.h netdb.h netinet/in.h pcre2.h \
                   semaphore.h signal.h stdint.h stdlib.h string.h sys/ioctl.h sys/mman.h sys/param.h sys/socket.h \
                   sys/types.h sys/sem.h sys/stat.h sys/wait.h time.h unistd.h utmp.h wchar.h],
                   [],

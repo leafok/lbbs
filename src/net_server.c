@@ -27,7 +27,6 @@
 #include "section_list_loader.h"
 #include <errno.h>
 #include <fcntl.h>
-#include <pty.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,6 +42,21 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+#ifdef __APPLE__
+#define st_atim st_atimespec
+#define st_mtim st_mtimespec
+#define st_ctim st_ctimespec
+#endif
+
+#if defined(__APPLE__)
+#include <util.h>
+#include <termios.h>
+#elif defined(__linux__)
+#include <pty.h>
+#else
+#include <libutil.h>
+#endif
 
 #ifdef HAVE_SYS_EPOLL_H
 #include <sys/epoll.h>
