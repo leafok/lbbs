@@ -209,7 +209,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 			{
 				input_str[str_len] = (char)(ch - 256);
 				str_len++;
-				c = (c & 0x7f) << 1;
+				c = (char)((c & 0x7f) << 1);
 
 				if ((c & 0x80) == 0) // Input completed
 				{
@@ -409,7 +409,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 					while (c & 0x80)
 					{
 						str_len++;
-						c = (c & 0x7f) << 1;
+						c = (char)((c & 0x7f) << 1);
 					}
 					display_len--;
 				}
@@ -474,7 +474,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 					while (c & 0x80)
 					{
 						str_len++;
-						c = (c & 0x7f) << 1;
+						c = (char)((c & 0x7f) << 1);
 					}
 
 					if (mbstowcs(wcs, buffer + offset, 1) == (size_t)-1)
@@ -537,7 +537,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 			{
 				input_str[str_len] = (char)(ch - 256);
 				str_len++;
-				c = (c & 0x7f) << 1;
+				c = (char)((c & 0x7f) << 1);
 
 				if ((c & 0x80) == 0) // Input completed
 				{

@@ -347,7 +347,7 @@ int article_favor_display(ARTICLE_FAVOR *p_favor)
 			log_error("user_online_update(ARTICLE_FAVOR) error");
 		}
 
-		ret = article_favor_select(page_count, article_count, &page_id, &selected_index);
+		ret = (int)article_favor_select(page_count, article_count, &page_id, &selected_index);
 		switch (ret)
 		{
 		case EXIT_LIST:

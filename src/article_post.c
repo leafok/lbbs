@@ -581,7 +581,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 		goto cleanup;
 	}
 
-	len_content = editor_data_save(p_editor_data, content, ARTICLE_CONTENT_MAX_LEN - LINE_BUFFER_LEN);
+	len_content = editor_data_save(p_editor_data, content, (size_t)ARTICLE_CONTENT_MAX_LEN - LINE_BUFFER_LEN);
 	if (len_content < 0)
 	{
 		log_error("editor_data_save() error");
@@ -980,7 +980,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 		quote_content_lines = split_data_lines(content_f,
 											   MAX_EDITOR_DATA_LINE_LENGTH - 2, line_offsets,
-											   (full_quote ? MAX_EDITOR_DATA_LINES : ARTICLE_QUOTE_DEFAULT_LINES) + 1,
+											   (full_quote ? (int)MAX_EDITOR_DATA_LINES : (int)ARTICLE_QUOTE_DEFAULT_LINES) + 1,
 											   0, NULL);
 		for (i = 0; i < quote_content_lines; i++)
 		{

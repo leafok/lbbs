@@ -574,7 +574,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 			tag_output_len = 1;
 			if (str_in[i] & 0x80) // head of multi-byte character
 			{
-				c = (str_in[i] & 0x70) << 1;
+				c = (char)((str_in[i] & 0x70) << 1);
 				while (c & 0x80)
 				{
 					if (str_in[i + tag_output_len] == '\0')
@@ -582,7 +582,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 						break;
 					}
 					tag_output_len++;
-					c = (c & 0x7f) << 1;
+					c = (char)((c & 0x7f) << 1);
 				}
 			}
 
