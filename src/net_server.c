@@ -71,7 +71,7 @@
 enum _net_server_constant_t
 {
 	SOCKET_LISTEN_BACKLOG = 20,
-	WAIT_CHILD_PROCESS_EXIT_TIMEOUT = 5, // second
+	WAIT_CHILD_PROCESS_EXIT_TIMEOUT = 15, // second
 	WAIT_CHILD_PROCESS_KILL_TIMEOUT = 1, // second
 
 	SSH_AUTH_MAX_DURATION = 60 * 1000, // milliseconds
@@ -791,7 +791,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 				sd_notifyf(0, "STATUS=Kill %d child process", SYS_child_process_count);
 #endif
 
-				if (kill(0, SIGKILL) < 0)
+				if (kill(-1, SIGKILL) < 0)
 				{
 					log_error("Send SIGKILL signal failed (%d)", errno);
 				}
