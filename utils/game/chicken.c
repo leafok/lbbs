@@ -83,7 +83,7 @@ int chicken_main(void)
 	return 0;
 }
 
-static int load_chicken()
+static int load_chicken(void)
 {
 	FILE *fp;
 	time_t now;
@@ -385,7 +385,7 @@ static int show_chicken(void)
 	return 0;
 }
 
-static int select_menu()
+static int select_menu(void)
 {
 	int loop = 1;
 	char inbuf[2];
@@ -750,7 +750,7 @@ int guess(void)
 	return 0;
 }
 
-int win_c()
+int win_c(void)
 {
 	winn++;
 	clrtobot(20);

@@ -68,7 +68,7 @@ int load_cmd(void)
 	return 0;
 }
 
-void unload_cmd()
+void unload_cmd(void)
 {
 	trie_dict_destroy(p_bbs_cmd_dict);
 	p_bbs_cmd_dict = NULL;
