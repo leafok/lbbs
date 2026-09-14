@@ -417,7 +417,7 @@ int user_list_display(int online_user)
 					  (online_user ? "USER_ONLINE" : "USER_LIST"));
 		}
 
-		ret = user_list_select(page_count, user_count, &page_id, &selected_index);
+		ret = (int)user_list_select(page_count, user_count, &page_id, &selected_index);
 		switch (ret)
 		{
 		case EXIT_LIST:

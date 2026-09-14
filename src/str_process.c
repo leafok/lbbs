@@ -70,7 +70,7 @@ int str_length(const char *str, int skip_ctrl_seq)
 			{
 				input_str[str_len] = str[i + str_len];
 				str_len++;
-				c = (c & 0x7f) << 1;
+				c = (char)((c & 0x7f) << 1);
 			}
 			input_str[str_len] = '\0';
 
@@ -134,7 +134,7 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 			{
 				input_str[str_len] = buffer[i + str_len];
 				str_len++;
-				c = (c & 0x7f) << 1;
+				c = (char)((c & 0x7f) << 1);
 			}
 			input_str[str_len] = '\0';
 

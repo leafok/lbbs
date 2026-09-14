@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
 	}
 	if (article_block_init(VAR_ARTICLE_BLOCK_SHM, (int)BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block) < 0)
 	{
-		log_error("article_block_init(%s, %d) error", VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block);
+		log_error("article_block_init(%s, %d) error", VAR_ARTICLE_BLOCK_SHM, (int)BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block);
 		goto cleanup;
 	}
 	if (section_list_init(VAR_SECTION_LIST_SHM) < 0)
