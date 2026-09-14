@@ -16,7 +16,7 @@ enum money_constant_t
 
 extern int BBS_user_money;
 
-extern int money_balance();
+extern int money_balance(void);
 extern int money_deposit(int money);
 extern int money_withdraw(int money);
 extern int money_refresh(void);

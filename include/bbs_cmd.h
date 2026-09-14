@@ -29,7 +29,7 @@ struct _bbs_cmd
 
 typedef struct _bbs_cmd BBS_CMD;
 
-extern int load_cmd();
+extern int load_cmd(void);
 
 extern bbs_cmd_handler get_cmd_handler(const char *cmd);
 

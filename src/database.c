@@ -28,7 +28,7 @@ char DB_password[DB_password_max_len + 1];
 char DB_database[DB_database_max_len + 1];
 char DB_timezone[DB_timezone_max_len + 1];
 
-MYSQL *db_open()
+MYSQL *db_open(void)
 {
 	MYSQL *db = NULL;
 #ifdef HAVE_MARIADB_CLIENT

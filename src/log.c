@@ -61,7 +61,7 @@ int log_begin(const char *common_log_file, const char *error_log_file)
 	return 0;
 }
 
-void log_end()
+void log_end(void)
 {
 	if (fp_common_log)
 	{

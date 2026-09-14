@@ -57,7 +57,7 @@ static int select_menu(void);
 static int tie(void);
 static int win_c(void);
 
-int chicken_main()
+int chicken_main(void)
 {
 	if (money_refresh() < 0)
 	{
@@ -122,7 +122,7 @@ static int load_chicken()
 	return 0;
 }
 
-int save_chicken()
+int save_chicken(void)
 {
 	FILE *fp;
 
@@ -134,7 +134,7 @@ int save_chicken()
 	return 0;
 }
 
-static int create_a_egg()
+static int create_a_egg(void)
 {
 	FILE *fp;
 	struct tm ptime;
@@ -187,7 +187,7 @@ static int create_a_egg()
 	return 0;
 }
 
-static int show_chicken()
+static int show_chicken(void)
 {
 	if (chictime >= 200)
 	{
@@ -637,7 +637,7 @@ static int select_menu()
 	return 0;
 }
 
-int death()
+int death(void)
 {
 	FILE *fp;
 	struct tm ptime;
@@ -679,7 +679,7 @@ int pressany(int i)
 	return ch;
 }
 
-int guess()
+int guess(void)
 {
 	int ch, com;
 
@@ -760,7 +760,8 @@ int win_c()
 		   "                                 ");
 	return 0;
 }
-int tie()
+
+int tie(void)
 {
 	clrtobot(20);
 	moveto(20, 0);
@@ -769,7 +770,8 @@ int tie()
 		   "                                              ");
 	return 0;
 }
-int lose()
+
+int lose(void)
 {
 	losee++;
 	happy += 2;
@@ -780,7 +782,7 @@ int lose()
 	return 0;
 }
 
-int situ()
+int situ(void)
 {
 	clrtobot(16);
 	moveto(16, 0);
@@ -798,7 +800,7 @@ int situ()
 	return 0;
 }
 
-int sell()
+int sell(void)
 {
 	int sel = 0;
 	char ans[2];

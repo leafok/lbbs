@@ -32,12 +32,12 @@ typedef struct display_ctx_t DISPLAY_CTX;
 typedef int (*display_data_key_handler)(int *p_key, DISPLAY_CTX *p_ctx);
 
 extern void moveto(int row, int col);
-extern void clrtoeol();
+extern void clrtoeol(void);
 extern void clrline(int line_begin, int line_end);
 extern void clrtobot(int line_begin);
-extern void clearscr();
+extern void clearscr(void);
 
-extern int press_any_key();
+extern int press_any_key(void);
 extern int press_any_key_ex(const char *msg, int sec);
 extern int press_any_key_no_prompt(int sec);
 
@@ -58,6 +58,6 @@ extern int display_file_key_handler(int *p_key, DISPLAY_CTX *p_ctx);
 extern int show_top(const char *str_left, const char *str_center, const char *str_right);
 extern int show_bottom(const char *msg);
 
-extern int show_active_board();
+extern int show_active_board(void);
 
 #endif //_SCREEN_H_

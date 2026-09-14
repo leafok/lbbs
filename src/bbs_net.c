@@ -1473,7 +1473,7 @@ static int bbsnet_selchange()
 	return 0;
 }
 
-int bbs_net()
+int bbs_net(void)
 {
 	int ch;
 

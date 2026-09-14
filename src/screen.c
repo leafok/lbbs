@@ -62,7 +62,7 @@ void moveto(int row, int col)
 	}
 }
 
-void clrtoeol()
+void clrtoeol(void)
 {
 	prints(CTRL_SEQ_CLR_LINE);
 }
@@ -85,13 +85,13 @@ void clrtobot(int line_begin)
 	moveto(line_begin, 0);
 }
 
-void clearscr()
+void clearscr(void)
 {
 	prints("\033[2J");
 	moveto(1, 1);
 }
 
-inline int press_any_key()
+inline int press_any_key(void)
 {
 	return press_any_key_ex("                           \033[1;33m按任意键继续...\033[m", 60);
 }
@@ -1004,7 +1004,7 @@ int show_bottom(const char *msg)
 	return 0;
 }
 
-int show_active_board()
+int show_active_board(void)
 {
 	static int line_current = 0;
 	static const void *p_shm = NULL;
