@@ -49,13 +49,11 @@
 #define st_ctim st_ctimespec
 #endif
 
-#if defined(__APPLE__)
+#ifdef __APPLE__
 #include <util.h>
 #include <termios.h>
-#elif defined(__linux__)
-#include <pty.h>
 #else
-#include <libutil.h>
+#include <pty.h>
 #endif
 
 #ifdef HAVE_SYS_EPOLL_H
