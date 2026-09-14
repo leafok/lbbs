@@ -719,7 +719,7 @@ int section_list_display(const char *sname, int32_t aid)
 			log_error("user_online_update(%s) error", sname);
 		}
 
-		ret = section_list_select(page_count, article_count, &page_id, &selected_index);
+		ret = (int)section_list_select(page_count, article_count, &page_id, &selected_index);
 
 		switch (ret)
 		{

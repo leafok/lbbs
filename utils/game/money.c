@@ -20,7 +20,7 @@
 
 int BBS_user_money = 0;
 
-int money_balance()
+int money_balance(void)
 {
 	return BBS_user_money;
 }

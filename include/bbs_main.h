@@ -9,6 +9,6 @@
 #ifndef _BBS_MAIN_H_
 #define _BBS_MAIN_H_
 
-extern int bbs_main();
+extern int bbs_main(void);
 
 #endif //_BBS_MAIN_H_

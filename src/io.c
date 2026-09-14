@@ -1100,7 +1100,7 @@ int igetch_t(int sec)
 	return ch;
 }
 
-void igetch_reset()
+void igetch_reset(void)
 {
 	int ch;
 	do

@@ -47,7 +47,7 @@ int list_section(void *param)
 typedef union exec_handler_t
 {
 	void *p;
-	int (*handler)();
+	int (*handler)(void);
 } exec_handler;
 
 int exec_mbem(void *param)

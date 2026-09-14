@@ -9,6 +9,6 @@
 #ifndef _CHICKEN_H_
 #define _CHICKEN_H_
 
-extern int chicken_main();
+extern int chicken_main(void);
 
 #endif //_CHICKEN_H_

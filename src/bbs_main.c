@@ -47,7 +47,7 @@ static void child_proc_sig_usr1_handler(int i)
 	}
 }
 
-int bbs_info()
+int bbs_info(void)
 {
 	prints("\r\n欢迎光临 \033[1;33m%s \033[32m[%s] \033[37m(%s)\033[m\r\n",
 		   BBS_name, BBS_server, APP_INFO);
@@ -148,7 +148,7 @@ int bbs_session_cleanup(void)
 	return 0;
 }
 
-int bbs_center()
+int bbs_center(void)
 {
 	int ch;
 	int loop;
@@ -231,7 +231,7 @@ int bbs_center()
 	return 0;
 }
 
-int bbs_charset_select()
+int bbs_charset_select(void)
 {
 	char msg[LINE_BUFFER_LEN];
 	int ch;
@@ -292,7 +292,7 @@ int bbs_charset_select()
 	return 0;
 }
 
-int bbs_main()
+int bbs_main(void)
 {
 	struct sigaction act = {0};
 	char msg[LINE_BUFFER_LEN];

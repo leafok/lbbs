@@ -1425,7 +1425,7 @@ cleanup:
 	return ret;
 }
 
-static int bbsnet_refresh()
+static int bbsnet_refresh(void)
 {
 	clearscr();
 
@@ -1450,7 +1450,7 @@ static int bbsnet_refresh()
 	return 0;
 }
 
-static int bbsnet_selchange()
+static int bbsnet_selchange(void)
 {
 	int i = bbsnet_menu.menu_item_pos[0];
 
@@ -1473,7 +1473,7 @@ static int bbsnet_selchange()
 	return 0;
 }
 
-int bbs_net()
+int bbs_net(void)
 {
 	int ch;
 

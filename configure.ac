@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([lbbs],[1.7.8])
+AC_INIT([lbbs],[1.7.9])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIRS([m4])
@@ -12,9 +12,7 @@ AM_SILENT_RULES(yes)
 AC_USE_SYSTEM_EXTENSIONS
 # Checks for programs.
 LT_INIT
-AC_PROG_CXX
 AC_PROG_CC
-AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -79,7 +77,7 @@ AS_IF([test "x$enable_shared" = xyes],
       [AC_DEFINE([_ENABLE_SHARED], [1], [Define if shared library is enabled])])
 AM_CONDITIONAL([STATIC_LINK], [test "x$enable_shared" != xyes])
 
-CPPFLAGS="$CPPFLAGS $LIBSSH_CFLAGS $MYSQLCLIENT_CFLAGS $SYSTEMD_CFLAGS $LIBPCRE2_CFLAGS $ICONV_CFLAGS"
+CFLAGS="$CFLAGS $LIBSSH_CFLAGS $MYSQLCLIENT_CFLAGS $SYSTEMD_CFLAGS $LIBPCRE2_CFLAGS $ICONV_CFLAGS"
 
 # Checks for libraries.
 AC_HEADER_STAT
@@ -87,7 +85,7 @@ AC_PROG_EGREP
 
 AC_HEADER_RESOLV
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h iconv.h libssh/libssh.h mysql.h netdb.h netinet/in.h pcre2.h pty.h \
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h iconv.h libssh/libssh.h mysql.h netdb.h netinet/in.h pcre2.h \
                   semaphore.h signal.h stdint.h stdlib.h string.h sys/ioctl.h sys/mman.h sys/param.h sys/socket.h \
                   sys/types.h sys/sem.h sys/stat.h sys/wait.h time.h unistd.h utmp.h wchar.h],
                   [],

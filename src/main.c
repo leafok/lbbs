@@ -34,6 +34,12 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#ifdef __APPLE__
+#define st_atim st_atimespec
+#define st_mtim st_mtimespec
+#define st_ctim st_ctimespec
+#endif
+
 typedef void (*arg_option_handler_t)(void);
 
 struct arg_option_t
@@ -315,9 +321,9 @@ int main(int argc, char *argv[])
 		log_error("trie_dict_init(%s, %d) error", VAR_TRIE_DICT_SHM, TRIE_NODE_PER_POOL);
 		goto cleanup;
 	}
-	if (article_block_init(VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block) < 0)
+	if (article_block_init(VAR_ARTICLE_BLOCK_SHM, (int)BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block) < 0)
 	{
-		log_error("article_block_init(%s, %d) error", VAR_ARTICLE_BLOCK_SHM, BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block);
+		log_error("article_block_init(%s, %d) error", VAR_ARTICLE_BLOCK_SHM, (int)BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block);
 		goto cleanup;
 	}
 	if (section_list_init(VAR_SECTION_LIST_SHM) < 0)

@@ -30,6 +30,6 @@ extern char DB_password[DB_password_max_len + 1];
 extern char DB_database[DB_database_max_len + 1];
 extern char DB_timezone[DB_timezone_max_len + 1];
 
-extern MYSQL *db_open();
+extern MYSQL *db_open(void);
 
 #endif //_DATABASE_H_

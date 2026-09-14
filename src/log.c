@@ -61,7 +61,7 @@ int log_begin(const char *common_log_file, const char *error_log_file)
 	return 0;
 }
 
-void log_end()
+void log_end(void)
 {
 	if (fp_common_log)
 	{
@@ -112,7 +112,7 @@ int log_printf(enum log_level_t log_level, const char *app_file, int app_line, c
 
 	fp_log = (log_level == LOG_LEVEL_COMMON ? fp_common_log : fp_error_log);
 
-	offset = log_head(buf, sizeof(buf), log_level, app_file, app_line);
+	offset = log_head(buf, sizeof(buf), (int)log_level, app_file, app_line);
 
 	va_start(args, format);
 	ret = vsnprintf(buf + offset, sizeof(buf) - (size_t)offset, format, args);

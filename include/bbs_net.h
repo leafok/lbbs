@@ -9,6 +9,6 @@
 #ifndef _BBS_NET_H_
 #define _BBS_NET_H_
 
-extern int bbs_net();
+extern int bbs_net(void);
 
 #endif //_BBS_NET_H_

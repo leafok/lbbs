@@ -62,7 +62,7 @@ void moveto(int row, int col)
 	}
 }
 
-void clrtoeol()
+void clrtoeol(void)
 {
 	prints(CTRL_SEQ_CLR_LINE);
 }
@@ -85,13 +85,13 @@ void clrtobot(int line_begin)
 	moveto(line_begin, 0);
 }
 
-void clearscr()
+void clearscr(void)
 {
 	prints("\033[2J");
 	moveto(1, 1);
 }
 
-inline int press_any_key()
+inline int press_any_key(void)
 {
 	return press_any_key_ex("                           \033[1;33m按任意键继续...\033[m", 60);
 }
@@ -209,7 +209,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 			{
 				input_str[str_len] = (char)(ch - 256);
 				str_len++;
-				c = (c & 0x7f) << 1;
+				c = (char)((c & 0x7f) << 1);
 
 				if ((c & 0x80) == 0) // Input completed
 				{
@@ -409,7 +409,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 					while (c & 0x80)
 					{
 						str_len++;
-						c = (c & 0x7f) << 1;
+						c = (char)((c & 0x7f) << 1);
 					}
 					display_len--;
 				}
@@ -474,7 +474,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 					while (c & 0x80)
 					{
 						str_len++;
-						c = (c & 0x7f) << 1;
+						c = (char)((c & 0x7f) << 1);
 					}
 
 					if (mbstowcs(wcs, buffer + offset, 1) == (size_t)-1)
@@ -537,7 +537,7 @@ int get_data(int row, int col, char *prompt, char *buffer, int buf_size, int max
 			{
 				input_str[str_len] = (char)(ch - 256);
 				str_len++;
-				c = (c & 0x7f) << 1;
+				c = (char)((c & 0x7f) << 1);
 
 				if ((c & 0x80) == 0) // Input completed
 				{
@@ -1004,7 +1004,7 @@ int show_bottom(const char *msg)
 	return 0;
 }
 
-int show_active_board()
+int show_active_board(void)
 {
 	static int line_current = 0;
 	static const void *p_shm = NULL;

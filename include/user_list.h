@@ -54,7 +54,7 @@ struct user_list_t
 	USER_INFO users[BBS_max_user_count];
 	USER_INFO_INDEX_UID index_uid[BBS_max_user_count];
 	int32_t user_count;
-	char user_intro_buf[BBS_user_intro_avg_len * BBS_max_user_count];
+	char user_intro_buf[(size_t)BBS_user_intro_avg_len * BBS_max_user_count];
 };
 typedef struct user_list_t USER_LIST;
 

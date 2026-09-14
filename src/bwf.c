@@ -19,6 +19,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __APPLE__
+#define mempcpy(dest, src, n) ((void *)((char *)memcpy(dest, src, n) + (n)))
+#endif
+
 enum _bwf_constant_t
 {
 	BWF_max_pattern_len = 64,

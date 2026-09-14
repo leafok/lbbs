@@ -16,6 +16,7 @@
 #include "user_list.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>

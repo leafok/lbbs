@@ -43,7 +43,7 @@ static const int bbs_cmd_count = sizeof(bbs_cmd_list) / sizeof(BBS_CMD);
 
 static TRIE_NODE *p_bbs_cmd_dict;
 
-int load_cmd()
+int load_cmd(void)
 {
 	if (p_bbs_cmd_dict != NULL)
 	{
@@ -68,7 +68,7 @@ int load_cmd()
 	return 0;
 }
 
-void unload_cmd()
+void unload_cmd(void)
 {
 	trie_dict_destroy(p_bbs_cmd_dict);
 	p_bbs_cmd_dict = NULL;

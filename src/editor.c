@@ -518,11 +518,11 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	else if (p_data_line[offset_data_line] & 0x80) // head of multi-byte character
 	{
 		str_len = 1;
-		c = (p_data_line[offset_data_line] & 0x70) << 1;
+		c = (char)((p_data_line[offset_data_line] & 0x70) << 1);
 		while (c & 0x80)
 		{
 			str_len++;
-			c = (c & 0x7f) << 1;
+			c = (char)((c & 0x7f) << 1);
 		}
 	}
 	else
@@ -748,7 +748,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					{
 						input_str[str_len] = (char)(ch - 256);
 						str_len++;
-						c = (c & 0x7f) << 1;
+						c = (char)((c & 0x7f) << 1);
 
 						if ((c & 0x80) == 0) // Input completed
 						{
@@ -1119,7 +1119,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 							while (c & 0x80)
 							{
 								str_len++;
-								c = (c & 0x7f) << 1;
+								c = (char)((c & 0x7f) << 1);
 							}
 
 							if (str_len > 4)

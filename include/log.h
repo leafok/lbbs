@@ -19,7 +19,7 @@ enum log_level_t
 };
 
 extern int log_begin(const char *common_log_file, const char *error_log_file);
-extern void log_end();
+extern void log_end(void);
 
 extern int log_printf(enum log_level_t log_level, const char *app_file, int app_line, const char *format, ...);
 
