@@ -16,7 +16,7 @@ Demo site: fenglin.info (Telnet 2323 / SSH2 2322)
 ## System Requirements
 
 1. GNU C Compiler
-2. PHP (version 8.2 or higher)
+2. PHP (version 8.4 or higher)
 3. MySQL database (version 8.4 or higher)
 
 ## Installation

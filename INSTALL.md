@@ -15,7 +15,7 @@ It is highly recommended to complete the web version configuration steps first a
 - gcc >= 13.3
 - autoconf >= 2.68
 - automake >= 1.16
-- php >= 8.2
+- php >= 8.4
 - mysql >= 8.4
 
 ### Distribution-Specific Packages
