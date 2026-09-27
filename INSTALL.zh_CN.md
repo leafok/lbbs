@@ -15,7 +15,7 @@
 - gcc >= 13.3
 - autoconf >= 2.68
 - automake >= 1.16
-- php >= 8.2
+- php >= 8.4
 - mysql >= 8.4
 
 ### 发行版特定软件包
