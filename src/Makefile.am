@@ -1,6 +1,6 @@
 bin_PROGRAMS = bbsd
 test_PROGRAMS = test_trie_dict test_file_loader test_section_list test_lml test_ssh_server test_article_favor test_article_view_log \
-			   test_memory_pool test_bbs test_bwf test_hash_dict
+			   test_memory_pool test_bbs test_bwf test_hash_dict test_ip_mask
 
 testdir = ${prefix}/test
 
@@ -31,6 +31,7 @@ test_memory_pool_SOURCES = log.c memory_pool.c test_memory_pool.c
 test_bbs_SOURCES = bbs.c log.c test_bbs.c user_priv.c
 test_bwf_SOURCES = bwf.c log.c test_bwf.c
 test_hash_dict_SOURCES = hash_dict.c log.c memory_pool.c test_hash_dict.c
+test_ip_mask_SOURCES = ip_mask.c test_ip_mask.c
 
 AM_CFLAGS = -I${srcdir}/../include -I${srcdir}/../utils/game ${LIBSSH_CFLAGS} ${MYSQLCLIENT_CFLAGS} ${SYSTEMD_CFLAGS} ${LIBPCRE2_CFLAGS} ${ICONV_CFLAGS} \
 			-std=c17 -Wall -Werror -Wformat -Wpedantic -Wformat-security -Wconversion \
