@@ -352,7 +352,7 @@ static int fork_server(void)
 #ifdef HAVE_SYS_EPOLL_H
 	if (close(epollfd_server) < 0)
 	{
-		log_error("close(epollfd_server) error (%d)");
+		log_error("close(epollfd_server) error (%d)", errno);
 	}
 #endif
 
@@ -665,7 +665,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 			log_error("epoll_ctl(socket_server[%d]) error (%d)", i, errno);
 			if (close(epollfd_server) < 0)
 			{
-				log_error("close(epoll) error (%d)");
+				log_error("close(epoll) error (%d)", errno);
 			}
 			return -1;
 		}
@@ -744,7 +744,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 						ret = hash_dict_inc(hash_dict_sockaddr_count, (in_addr_t)j, -1);
 						if (ret <= 0)
 						{
-							log_error("hash_dict_inc(hash_dict_sockaddr_count, %lu, -1) error: %d", (in_addr_t)j, ret);
+							log_error("hash_dict_inc(hash_dict_sockaddr_count, %u, -1) error: %d", (in_addr_t)j, ret);
 						}
 
 						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)pid);
@@ -835,7 +835,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 			// Get EULA modification tm
 			if (stat(DATA_EULA, &file_stat) == -1)
 			{
-				log_error("stat(%s) error", DATA_EULA, errno);
+				log_error("stat(%s) error (%d)", DATA_EULA, errno);
 			}
 			else
 			{
@@ -994,7 +994,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 								else
 								{
 									// Increase connection count from this IP
-									log_common("Accept %s connection from %s:%d, already have %d connections",
+									log_common("Accept %s connection from %s:%d, already have %ld connections",
 											   (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j);
 
 									ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
@@ -1007,7 +1007,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 						}
 						else
 						{
-							log_error("Rejected %s connection from %s:%d over limit per IP (%d >= %d)",
+							log_error("Rejected %s connection from %s:%d over limit per IP (%ld >= %d)",
 									  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j, BBS_max_client_per_ip);
 						}
 					}
@@ -1029,7 +1029,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 #ifdef HAVE_SYS_EPOLL_H
 	if (close(epollfd_server) < 0)
 	{
-		log_error("close(epollfd_server) error (%d)");
+		log_error("close(epollfd_server) error (%d)", errno);
 	}
 #endif
 

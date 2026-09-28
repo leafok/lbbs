@@ -34,6 +34,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 	if (p_section == NULL || p_article == NULL)
 	{
 		log_error("NULL pointer error");
+		return -1;
 	}
 
 	if (p_article->excerption) // Delete is not allowed

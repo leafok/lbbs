@@ -111,7 +111,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 			p_data_line = memory_pool_alloc(p_mp_data_line);
 			if (p_data_line == NULL)
 			{
-				log_error("memory_pool_alloc() error: i = %d", i);
+				log_error("memory_pool_alloc() error: i = %ld", i);
 				// Cleanup
 				editor_data_cleanup(p_editor_data);
 				return NULL;
@@ -169,7 +169,7 @@ long editor_data_save(const EDITOR_DATA *p_editor_data, char *p_data, size_t buf
 	{
 		if (current_pos + p_editor_data->display_line_lengths[i] + 1 > buf_len)
 		{
-			log_error("Data buffer not longer enough %d > %d", current_pos + p_editor_data->display_line_lengths[i] + 1, buf_len);
+			log_error("Data buffer not longer enough %ld > %zu", current_pos + p_editor_data->display_line_lengths[i] + 1, buf_len);
 			p_data[current_pos] = '\0';
 			return -2;
 		}
@@ -367,7 +367,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			// Insert blank display line after last_display_line
 			if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 			{
-				log_debug("display_line_total over limit %d >= %d", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
+				log_debug("display_line_total over limit %ld >= %d", p_editor_data->display_line_total, MAX_EDITOR_DATA_LINES);
 
 				// Terminate prior display line with \n, to avoid error on cleanup
 				if (display_line + i - 1 >= 0 && p_editor_data->display_line_lengths[display_line + i - 1] > 0)

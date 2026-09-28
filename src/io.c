@@ -1148,7 +1148,7 @@ int io_buf_conv(iconv_t cd, char *p_buf, int *p_buf_len, int *p_buf_offset, char
 
 			if (out_bytes <= 0)
 			{
-				log_error("No enough free space in p_conv, conv_len=%d, conv_size=%d", *p_conv_len, conv_size);
+				log_error("No enough free space in p_conv, conv_len=%d, conv_size=%zu", *p_conv_len, conv_size);
 				return -2;
 			}
 

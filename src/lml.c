@@ -283,7 +283,7 @@ int lml_render(const char *str_in, char *str_out, int buf_len, int width, int qu
 #ifdef _DEBUG
 		if (i >= str_in_len)
 		{
-			log_error("Bug: i(%d) >= str_in_len(%d)", i, str_in_len);
+			log_error("Bug: i(%d) >= str_in_len(%zu)", i, str_in_len);
 			break;
 		}
 #endif

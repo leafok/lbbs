@@ -100,7 +100,7 @@ int load_file(const char *filename)
 	}
 	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("ftruncate(size=%d) error (%d)", size, errno);
+		log_error("ftruncate(size=%zu) error (%d)", size, errno);
 		close(fd);
 		return -2;
 	}

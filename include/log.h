@@ -18,10 +18,18 @@ enum log_level_t
 	LOG_LEVEL_DEBUG,
 };
 
+// Enable compile-time format string checking for log_* calls (GCC / Clang)
+#if defined(__GNUC__)
+#define LOG_PRINTF_FORMAT_ATTR __attribute__((format(printf, 4, 5)))
+#else
+#define LOG_PRINTF_FORMAT_ATTR
+#endif
+
 extern int log_begin(const char *common_log_file, const char *error_log_file);
 extern void log_end(void);
 
-extern int log_printf(enum log_level_t log_level, const char *app_file, int app_line, const char *format, ...);
+extern int log_printf(enum log_level_t log_level, const char *app_file, int app_line, const char *format, ...)
+		LOG_PRINTF_FORMAT_ATTR;
 
 #define log_common(...) log_printf(LOG_LEVEL_COMMON, __FILE__, __LINE__, __VA_ARGS__)
 #define log_error(...) log_printf(LOG_LEVEL_ERROR, __FILE__, __LINE__, __VA_ARGS__)

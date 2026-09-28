@@ -130,7 +130,7 @@ int article_block_init(const char *filename, int block_count)
 	}
 	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("ftruncate(size=%d) error (%d)", size, errno);
+		log_error("ftruncate(size=%zu) error (%d)", size, errno);
 		close(fd);
 		return -2;
 	}
@@ -176,7 +176,7 @@ int article_block_init(const char *filename, int block_count)
 		}
 		if (ftruncate(fd, (off_t)size) == -1)
 		{
-			log_error("ftruncate(size=%d) error (%d)", size, errno);
+			log_error("ftruncate(size=%zu) error (%d)", size, errno);
 			close(fd);
 			return -2;
 		}
@@ -486,7 +486,7 @@ extern int section_list_init(const char *filename)
 	}
 	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("ftruncate(size=%d) error (%d)", size, errno);
+		log_error("ftruncate(size=%zu) error (%d)", size, errno);
 		close(fd);
 		return -2;
 	}
@@ -535,7 +535,7 @@ extern int section_list_init(const char *filename)
 	semid = semget(key, (int)size, IPC_CREAT | IPC_EXCL | 0600);
 	if (semid == -1)
 	{
-		log_error("semget(section_list_pool_sem, size = %d) error (%d)", size, errno);
+		log_error("semget(section_list_pool_sem, size = %zu) error (%d)", size, errno);
 		return -3;
 	}
 
@@ -556,14 +556,14 @@ extern int section_list_init(const char *filename)
 	p_section_list_pool->p_trie_dict_section_by_name = trie_dict_create();
 	if (p_section_list_pool->p_trie_dict_section_by_name == NULL)
 	{
-		log_error("trie_dict_create() OOM", BBS_max_section);
+		log_error("trie_dict_create() OOM, BBS_max_section=%d", BBS_max_section);
 		return -2;
 	}
 
 	p_section_list_pool->p_trie_dict_section_by_sid = trie_dict_create();
 	if (p_section_list_pool->p_trie_dict_section_by_sid == NULL)
 	{
-		log_error("trie_dict_create() OOM", BBS_max_section);
+		log_error("trie_dict_create() OOM, BBS_max_section=%d", BBS_max_section);
 		return -2;
 	}
 
@@ -732,7 +732,7 @@ int section_list_update(SECTION_LIST *p_section, const char *sname, const char *
 
 	if (trie_dict_set(p_section_list_pool->p_trie_dict_section_by_name, sname, index) < 0)
 	{
-		log_error("trie_dict_set(section, %s, %d) error", sname, index);
+		log_error("trie_dict_set(section, %s, %ld) error", sname, index);
 		return -2;
 	}
 
@@ -1132,8 +1132,6 @@ int section_list_update_article_ontop(SECTION_LIST *p_section, ARTICLE *p_articl
 
 		p_section->p_ontop_articles[i] = p_article;
 		p_section->ontop_article_count++;
-
-		// TODO: debug
 	}
 	else // ontop == 0
 	{
@@ -2066,7 +2064,7 @@ int section_list_rd_lock(SECTION_LIST *p_section)
 				log_error("section_list_try_rd_lock() tried %d times on section %d", timer, sid);
 				if (time(NULL) - tm_first_failure >= SECTION_DEAD_LOCK_TIMEOUT)
 				{
-					log_error("Unable to acquire rd_lock for %d seconds", time(NULL) - tm_first_failure);
+					log_error("Unable to acquire rd_lock for %ld seconds", time(NULL) - tm_first_failure);
 #ifndef HAVE_SYSTEM_V
 					section_list_reset_lock(p_section);
 					log_error("Reset POSIX semaphore to resolve dead lock");
@@ -2114,7 +2112,7 @@ int section_list_rw_lock(SECTION_LIST *p_section)
 				log_error("section_list_try_rw_lock() tried %d times on section %d", timer, sid);
 				if (time(NULL) - tm_first_failure >= SECTION_DEAD_LOCK_TIMEOUT)
 				{
-					log_error("Unable to acquire rw_lock for %d seconds", time(NULL) - tm_first_failure);
+					log_error("Unable to acquire rw_lock for %ld seconds", time(NULL) - tm_first_failure);
 #ifndef HAVE_SYSTEM_V
 					section_list_reset_lock(p_section);
 					log_error("Reset POSIX semaphore to resolve dead lock");

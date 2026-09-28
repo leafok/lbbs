@@ -129,7 +129,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 
 	if (header_len != cache.line_offsets[header_line_cnt])
 	{
-		log_debug("Header of article(aid=%d) is truncated from %ld to %ld\n, body_line=%ld, body_line_limit=%ld",
+		log_debug("Header of article(aid=%d) is truncated from %ld to %ld\n, body_line=%ld, body_line_limit=%d",
 				  p_article->aid, header_len, cache.line_offsets[header_line_cnt],
 				  header_line_cnt, MAX_SPLIT_FILE_LINES);
 		header_len = (size_t)cache.line_offsets[header_line_cnt];
