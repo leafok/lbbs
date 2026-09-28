@@ -72,7 +72,7 @@ int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc)
 	p_view_log->aid_base = malloc(sizeof(int32_t) * mysql_num_rows(rs));
 	if (p_view_log->aid_base == NULL)
 	{
-		log_error("malloc(INT32 * %d) error: OOM", mysql_num_rows(rs));
+		log_error("malloc(INT32 * %lu) error: OOM", (unsigned long)mysql_num_rows(rs));
 		mysql_free_result(rs);
 		mysql_close(db);
 		return -4;

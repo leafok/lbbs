@@ -199,7 +199,7 @@ static int load_bbsnet_conf(const char *file_config)
 		p_menu_item = get_menu_item_by_id(&bbsnet_menu, menu_item_id);
 		if (p_menu_item == NULL)
 		{
-			log_error("get_menu_item_by_id(%d) error: NULL pointer", menu_item_id);
+			log_error("get_menu_item_by_id(%lu) error: NULL pointer", menu_item_id);
 			fclose(fin);
 			unload_bbsnet_conf();
 			return -3;
@@ -1383,7 +1383,7 @@ cleanup:
 #ifdef HAVE_SYS_EPOLL_H
 	if (epollfd != -1 && close(epollfd) < 0)
 	{
-		log_error("close(epoll) error (%d)");
+		log_error("close(epoll) error (%d)", errno);
 	}
 #endif
 

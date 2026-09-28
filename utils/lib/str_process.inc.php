@@ -44,6 +44,10 @@ function str_length(string $str, bool $skip_ctrl_seq = false) : int
 			while ($v2 & 0x80)
 			{
 				$i++;
+				if ($i >= $len) // Truncated multi-byte sequence
+				{
+					break;
+				}
 				$c .= $str[$i];
 				$v2 = ($v2 & 0x7f) << 1;
 			}
@@ -106,6 +110,10 @@ function split_line(string $str, string $prefix = "", int $width = PHP_INT_MAX, 
 			while ($v2 & 0x80)
 			{
 				$i++;
+				if ($i >= $len) // Truncated multi-byte sequence
+				{
+					break;
+				}
 				$c .= $str[$i];
 				$v2 = ($v2 & 0x7f) << 1;
 			}

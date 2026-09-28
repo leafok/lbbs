@@ -82,7 +82,7 @@ int trie_dict_init(const char *filename, int node_count_limit)
 	}
 	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("ftruncate(size=%d) error (%d)", size, errno);
+		log_error("ftruncate(size=%zu) error (%d)", size, errno);
 		close(fd);
 		return -2;
 	}

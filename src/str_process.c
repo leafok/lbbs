@@ -68,6 +68,11 @@ int str_length(const char *str, int skip_ctrl_seq)
 			c = (char)(c & 0xf0);
 			while (c & 0x80)
 			{
+				if (str[i + str_len] == '\0')
+				{
+					log_error("Truncated multi-byte sequence, i=%d, str_len=%d", i, str_len);
+					break;
+				}
 				input_str[str_len] = str[i + str_len];
 				str_len++;
 				c = (char)((c & 0x7f) << 1);
@@ -132,6 +137,11 @@ int split_line(const char *buffer, int max_display_len, int *p_eol, int *p_displ
 			c = (char)(c & 0xf0);
 			while (c & 0x80)
 			{
+				if (buffer[i + str_len] == '\0')
+				{
+					log_error("Truncated multi-byte sequence, i=%d, str_len=%d", i, str_len);
+					break;
+				}
 				input_str[str_len] = buffer[i + str_len];
 				str_len++;
 				c = (char)((c & 0x7f) << 1);
@@ -199,7 +209,7 @@ long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offse
 		// Exceed max_line_cnt
 		if (line_cnt + 1 >= line_offsets_count)
 		{
-			log_debug("Line count %d reaches limit %d", line_cnt + 1, line_offsets_count);
+			log_debug("Line count %d reaches limit %ld", line_cnt + 1, line_offsets_count);
 			return line_cnt;
 		}
 

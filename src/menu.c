@@ -123,7 +123,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	}
 	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("ftruncate(size=%d) error (%d)", size, errno);
+		log_error("ftruncate(size=%zu) error (%d)", size, errno);
 		close(fd);
 		return -2;
 	}
@@ -776,7 +776,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 					// Clear line
 					if (p_menu_set->p_menu_screen_buf_free + strlen(CTRL_SEQ_CLR_LINE) > q)
 					{
-						log_error("Menu screen buffer depleted (%p + %d > %p)", p_menu_set->p_menu_screen_buf_free, q, strlen(CTRL_SEQ_CLR_LINE));
+						log_error("Menu screen buffer depleted (%p + %zu > %p)", p_menu_set->p_menu_screen_buf_free, strlen(CTRL_SEQ_CLR_LINE), q);
 						return -3;
 					}
 					p_menu_set->p_menu_screen_buf_free = stpcpy(p_menu_set->p_menu_screen_buf_free, CTRL_SEQ_CLR_LINE);
@@ -882,7 +882,7 @@ int display_menu_cursor(MENU_SET *p_menu_set, int show)
 	p_menu = get_menu_by_id(p_menu_set, menu_id);
 	if (p_menu == NULL)
 	{
-		log_error("get_menu_by_id(%d) return NULL pointer", menu_id);
+		log_error("get_menu_by_id(%lu) return NULL pointer", menu_id);
 		return -1;
 	}
 
@@ -891,7 +891,7 @@ int display_menu_cursor(MENU_SET *p_menu_set, int show)
 	p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 	if (p_menu_item == NULL)
 	{
-		log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
+		log_error("get_menu_item_by_id(%lu) return NULL pointer", menu_item_id);
 		return -1;
 	}
 
@@ -917,7 +917,7 @@ static int display_menu_current_page(MENU_SET *p_menu_set)
 	p_menu = get_menu_by_id(p_menu_set, menu_id);
 	if (p_menu == NULL)
 	{
-		log_error("get_menu_by_id(%d) return NULL pointer", menu_id);
+		log_error("get_menu_by_id(%lu) return NULL pointer", menu_id);
 		return -1;
 	}
 
@@ -941,7 +941,7 @@ static int display_menu_current_page(MENU_SET *p_menu_set)
 		p_menu_screen = get_menu_screen_by_id(p_menu_set, p_menu->screen_id);
 		if (p_menu_screen == NULL)
 		{
-			log_error("get_menu_screen_by_id(%d) return NULL pointer", p_menu->screen_id);
+			log_error("get_menu_screen_by_id(%lu) return NULL pointer", p_menu->screen_id);
 			return -1;
 		}
 
@@ -1013,7 +1013,7 @@ int display_menu(MENU_SET *p_menu_set)
 	p_menu = get_menu_by_id(p_menu_set, menu_id);
 	if (p_menu == NULL)
 	{
-		log_error("get_menu_by_id(%d) return NULL pointer", menu_id);
+		log_error("get_menu_by_id(%lu) return NULL pointer", menu_id);
 		if (p_menu_set->choose_step > 0)
 		{
 			p_menu_set->choose_step--;
@@ -1036,7 +1036,7 @@ int display_menu(MENU_SET *p_menu_set)
 	p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 	if (p_menu_item == NULL)
 	{
-		log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
+		log_error("get_menu_item_by_id(%lu) return NULL pointer", menu_item_id);
 		return EXITMENU;
 	}
 
@@ -1137,7 +1137,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	p_menu = get_menu_by_id(p_menu_set, menu_id);
 	if (p_menu == NULL)
 	{
-		log_error("get_menu_by_id(%d) return NULL pointer", menu_id);
+		log_error("get_menu_by_id(%lu) return NULL pointer", menu_id);
 		if (p_menu_set->choose_step > 0)
 		{
 			p_menu_set->choose_step--;
@@ -1164,7 +1164,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 	if (p_menu_item == NULL)
 	{
-		log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
+		log_error("get_menu_item_by_id(%lu) return NULL pointer", menu_item_id);
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = 0;
 		return REDRAW;
 	}
@@ -1215,7 +1215,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 				if (p_menu_item == NULL)
 				{
-					log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
+					log_error("get_menu_item_by_id(%lu) return NULL pointer", menu_item_id);
 					return -1;
 				}
 
@@ -1248,7 +1248,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 			if (p_menu_item == NULL)
 			{
-				log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
+				log_error("get_menu_item_by_id(%lu) return NULL pointer", menu_item_id);
 				return -1;
 			}
 			if (require_page_change && p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
@@ -1279,7 +1279,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 			if (p_menu_item == NULL)
 			{
-				log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
+				log_error("get_menu_item_by_id(%lu) return NULL pointer", menu_item_id);
 				return -1;
 			}
 			if (require_page_change && p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
@@ -1303,7 +1303,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 			if (p_menu_item == NULL)
 			{
-				log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
+				log_error("get_menu_item_by_id(%lu) return NULL pointer", menu_item_id);
 				return -1;
 			}
 
@@ -1330,7 +1330,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 			if (p_menu_item == NULL)
 			{
-				log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
+				log_error("get_menu_item_by_id(%lu) return NULL pointer", menu_item_id);
 				return -1;
 			}
 
@@ -1357,7 +1357,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 				p_menu_item = get_menu_item_by_id(p_menu_set, menu_item_id);
 				if (p_menu_item == NULL)
 				{
-					log_error("get_menu_item_by_id(%d) return NULL pointer", menu_item_id);
+					log_error("get_menu_item_by_id(%lu) return NULL pointer", menu_item_id);
 					return -1;
 				}
 

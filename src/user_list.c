@@ -210,7 +210,7 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		intro_len = strlen((row[12] == NULL ? "" : row[12]));
 		if (intro_len >= sizeof(p_list->user_intro_buf) - 1 - intro_buf_offset)
 		{
-			log_error("OOM for user introduction: len=%d, i=%d", intro_len, i);
+			log_error("OOM for user introduction: len=%zu, i=%d", intro_len, i);
 			break;
 		}
 		memcpy(p_list->user_intro_buf + intro_buf_offset,
@@ -455,7 +455,7 @@ int user_list_pool_init(const char *filename)
 	}
 	if (ftruncate(fd, (off_t)size) == -1)
 	{
-		log_error("ftruncate(size=%d) error (%d)", size, errno);
+		log_error("ftruncate(size=%zu) error (%d)", size, errno);
 		close(fd);
 		return -2;
 	}
@@ -500,7 +500,7 @@ int user_list_pool_init(const char *filename)
 	semid = semget(key, (int)size, IPC_CREAT | IPC_EXCL | 0600);
 	if (semid == -1)
 	{
-		log_error("semget(user_list_pool_sem, size = %d) error (%d)", size, errno);
+		log_error("semget(user_list_pool_sem, size = %zu) error (%d)", size, errno);
 		return -3;
 	}
 
@@ -934,7 +934,7 @@ int user_list_rd_lock(void)
 
 				if (time(NULL) - tm_first_failure >= USER_LIST_DEAD_LOCK_TIMEOUT)
 				{
-					log_error("Unable to acquire rw_lock for %d seconds", time(NULL) - tm_first_failure);
+					log_error("Unable to acquire rw_lock for %ld seconds", time(NULL) - tm_first_failure);
 #ifndef HAVE_SYSTEM_V
 					user_list_reset_lock();
 					log_error("Reset POSIX semaphore to resolve dead lock");
@@ -982,7 +982,7 @@ int user_list_rw_lock(void)
 
 				if (time(NULL) - tm_first_failure >= USER_LIST_DEAD_LOCK_TIMEOUT)
 				{
-					log_error("Unable to acquire rw_lock for %d seconds", time(NULL) - tm_first_failure);
+					log_error("Unable to acquire rw_lock for %ld seconds", time(NULL) - tm_first_failure);
 #ifndef HAVE_SYSTEM_V
 					user_list_reset_lock();
 					log_error("Reset POSIX semaphore to resolve dead lock");
@@ -1377,7 +1377,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 			}
 			else // if (comp < 0)
 			{
-				log_error("Bug: left=%d right=%d mid=%d");
+				log_error("Bug: left=%d right=%d mid=%d", left, right, mid);
 				ret = -2;
 				goto cleanup;
 			}
@@ -1403,7 +1403,7 @@ int query_user_info_by_username(const char *username_prefix, int max_user_cnt,
 			}
 			else // if (comp > 0)
 			{
-				log_error("Bug: left=%d right=%d mid=%d");
+				log_error("Bug: left=%d right=%d mid=%d", left, right, mid);
 				ret = -2;
 				goto cleanup;
 			}

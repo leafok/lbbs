@@ -58,6 +58,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	if (p_section == NULL || p_article_new == NULL)
 	{
 		log_error("NULL pointer error");
+		return -1;
 	}
 
 	if (!checkpriv(&BBS_priv, p_section->sid, S_POST))
@@ -453,6 +454,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	if (p_section == NULL || p_article == NULL)
 	{
 		log_error("NULL pointer error");
+		return -1;
 	}
 
 	if (p_article->excerption) // Modify is not allowed
@@ -521,6 +523,13 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 
 		reply_note = atoi(row[2]);
 	}
+	else
+	{
+		log_error("Article content not found (aid=%d)", p_article->aid);
+		ret = -1;
+		goto cleanup;
+	}
+
 	mysql_free_result(rs);
 	rs = NULL;
 
@@ -754,6 +763,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	int sign_id = 0;
 	int reply_note = 0;
 	int full_quote = 0;
+	int cid = 0;
 	long len;
 	int ch;
 	char *p, *q;
@@ -770,6 +780,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	if (p_section == NULL || p_article == NULL)
 	{
 		log_error("NULL pointer error");
+		return -1;
 	}
 
 	if (!checkpriv(&BBS_priv, p_section->sid, S_POST))
@@ -856,6 +867,8 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 	if ((row = mysql_fetch_row(rs)))
 	{
+		cid = atoi(row[0]);
+
 		content = malloc(ARTICLE_CONTENT_MAX_LEN);
 		if (content == NULL)
 		{
@@ -879,6 +892,13 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		// Remove control sequence
 		len = str_filter(content_f, 0);
 	}
+	else
+	{
+		log_error("Article content not found (aid=%d)", p_article->aid);
+		ret = -1;
+		goto cleanup;
+	}
+
 	mysql_free_result(rs);
 	rs = NULL;
 
@@ -1007,7 +1027,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 		p_editor_data = editor_data_load(content);
 		if (p_editor_data == NULL)
 		{
-			log_error("editor_data_load(aid=%d, cid=%d) error", p_article->aid, atoi(row[0]));
+			log_error("editor_data_load(aid=%d, cid=%d) error", p_article->aid, cid);
 			ret = -1;
 			goto cleanup;
 		}

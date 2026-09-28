@@ -1045,7 +1045,7 @@ int show_active_board(void)
 		len = p_line_offsets[line_current + 1] - p_line_offsets[line_current];
 		if (len >= LINE_BUFFER_LEN)
 		{
-			log_error("buffer overflow: len=%ld(%ld - %ld) line=%ld ",
+			log_error("buffer overflow: len=%ld(%ld - %ld) line=%d ",
 					  len, p_line_offsets[line_current + 1], p_line_offsets[line_current], line_current);
 			len = LINE_BUFFER_LEN - 1;
 		}

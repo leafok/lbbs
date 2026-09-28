@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
 	// Get EULA modification tm
 	if (stat(DATA_EULA, &file_stat) == -1)
 	{
-		log_error("stat(%s) error", DATA_EULA, errno);
+		log_error("stat(%s) error (%d)", DATA_EULA, errno);
 		goto cleanup;
 	}
 	BBS_eula_tm = file_stat.st_mtim.tv_sec;

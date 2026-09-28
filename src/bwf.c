@@ -57,7 +57,7 @@ int bwf_load(const char *filename)
 		len_line = strnlen(line, sizeof(line) - 1);
 		if (!feof(fp) && line[len_line - 1] != '\n')
 		{
-			log_error("Data line %d (len=%d) is truncated", line_id, len_line);
+			log_error("Data line %d (len=%zu) is truncated", line_id, len_line);
 			bwf_pattern_str[0] = '\0';
 			return -3;
 		}
@@ -80,7 +80,7 @@ int bwf_load(const char *filename)
 
 		if (len_line + 2 > sizeof(bwf_pattern_str) - 1 - (size_t)(p - bwf_pattern_str))
 		{
-			log_error("Data in %s exceed length limit %d", filename, sizeof(bwf_pattern_str) - 1);
+			log_error("Data in %s exceed length limit %zu", filename, sizeof(bwf_pattern_str) - 1);
 			bwf_pattern_str[0] = '\0';
 			return -3;
 		}
@@ -168,13 +168,13 @@ int check_badwords(char *str, char c_mask)
 			i = ret - 1;
 			if (ovector[i * 2] == -1 || ovector[i * 2 + 1] == -1)
 			{
-				log_error("Bug: match pattern #%d of %d with invalid offsets [%d, %d)",
+				log_error("Bug: match pattern #%d of %d with invalid offsets [%zu, %zu)",
 						  i, match_count, ovector[i * 2], ovector[i * 2 + 1]);
 				ret = -2;
 			}
 			else
 			{
-				log_debug("Debug: match pattern #%d of %d at offsets [%d, %d]",
+				log_debug("Debug: match pattern #%d of %d at offsets [%zu, %zu]",
 						  i, match_count, ovector[i * 2], ovector[i * 2 + 1] - ovector[i * 2]);
 				memset(str + ovector[i * 2], c_mask, ovector[i * 2 + 1] - ovector[i * 2]);
 				total_match_count++;

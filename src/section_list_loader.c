@@ -595,7 +595,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 				// acquire lock of dest section
 				if ((ret = section_list_rw_lock(p_section_dest)) < 0)
 				{
-					log_error("section_list_rw_lock(sid = %d) error", p_section_dest);
+					log_error("section_list_rw_lock(sid = %d) error", p_section_dest->sid);
 					break;
 				}
 				// Move topic
@@ -607,7 +607,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 				// release lock of dest section
 				if (section_list_rw_unlock(p_section_dest) < 0)
 				{
-					log_error("section_list_rw_unlock(sid = %d) error", p_section_dest);
+					log_error("section_list_rw_unlock(sid = %d) error", p_section_dest->sid);
 					ret = -1;
 				}
 			}

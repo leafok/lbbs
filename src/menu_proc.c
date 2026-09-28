@@ -363,7 +363,7 @@ int locate_article(void *param)
 
 	if (sname == NULL || aid == NULL)
 	{
-		log_error("top10_locate(%s) error: invalid parameter", param);
+		log_error("top10_locate(%s) error: invalid parameter", (const char *)param);
 		return NOREDRAW;
 	}
 
