@@ -360,7 +360,7 @@ static int fork_server(void)
 	{
 		if (close(socket_server[i]) == -1)
 		{
-			log_error("Close server socket failed");
+			log_error("Close server socket error: %d", errno);
 		}
 	}
 
@@ -449,14 +449,14 @@ static int fork_server(void)
 	// Redirect Input
 	if (dup2(socket_client, STDIN_FILENO) == -1)
 	{
-		log_error("Redirect stdin to client socket failed");
+		log_error("Redirect STDIN to client socket error: %d", errno);
 		goto cleanup;
 	}
 
 	// Redirect Output
 	if (dup2(socket_client, STDOUT_FILENO) == -1)
 	{
-		log_error("Redirect stdout to client socket failed");
+		log_error("Redirect STDOUT to client socket error: %d", errno);
 		goto cleanup;
 	}
 
@@ -475,6 +475,7 @@ static int fork_server(void)
 		goto cleanup;
 	}
 
+	// Start BBS main
 	bbs_main();
 
 cleanup:
@@ -505,7 +506,7 @@ cleanup:
 	}
 	else if (close(socket_client) == -1)
 	{
-		log_error("Close client socket failed");
+		log_error("Close client socket error: %d", errno);
 	}
 
 	ssh_free(SSH_session);
