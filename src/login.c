@@ -395,7 +395,8 @@ int check_user(const char *username, const char *password)
 		if (setenv("TZ", user_tz_env, 1) == -1)
 		{
 			log_error("setenv(TZ = %s) error %d", user_tz_env, errno);
-			return -3;
+			ret = -3;
+			goto cleanup;
 		}
 
 		tzset();
@@ -620,6 +621,7 @@ int user_online_update(const char *action)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Update user_online error: %s", mysql_error(db));
+		mysql_close(db);
 		return -2;
 	}
 

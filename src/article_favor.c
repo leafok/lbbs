@@ -60,11 +60,13 @@ int article_favor_load(int uid, ARTICLE_FAVOR *p_favor, int keep_inc)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query article_favorite error: %s", mysql_error(db));
+		mysql_close(db);
 		return -3;
 	}
 	if ((rs = mysql_use_result(db)) == NULL)
 	{
 		log_error("Get article_favorite data failed");
+		mysql_close(db);
 		return -3;
 	}
 

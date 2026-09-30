@@ -220,9 +220,6 @@ int view_ex_article(void *param)
 	ARTICLE_CACHE cache;
 	ARTICLE *p_article;
 	int32_t aid = atoi(param);
-	int ret;
-
-	(void)ret;
 
 	p_article = article_block_find_by_aid(aid);
 	if (p_article == NULL)
@@ -242,8 +239,8 @@ int view_ex_article(void *param)
 		log_error("user_online_update(VIEW_ARTICLE) error");
 	}
 
-	ret = display_data(cache.p_data, cache.line_total, cache.line_offsets, 0,
-					   display_ex_article_key_handler, DATA_READ_HELP);
+	display_data(cache.p_data, cache.line_total, cache.line_offsets, 0,
+				   display_ex_article_key_handler, DATA_READ_HELP);
 
 	if (article_cache_unload(&cache) < 0)
 	{

@@ -115,6 +115,7 @@ int bbs_logout(void)
 
 	if (user_online_exp(db) < 0)
 	{
+		mysql_close(db);
 		return -2;
 	}
 
@@ -140,6 +141,7 @@ int bbs_session_cleanup(void)
 
 	if (user_online_del(db) < 0)
 	{
+		mysql_close(db);
 		return -2;
 	}
 

@@ -60,11 +60,13 @@ int article_view_log_load(int uid, ARTICLE_VIEW_LOG *p_view_log, int keep_inc)
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query view_article_log error: %s", mysql_error(db));
+		mysql_close(db);
 		return -3;
 	}
 	if ((rs = mysql_store_result(db)) == NULL)
 	{
 		log_error("Get view_article_log data failed");
+		mysql_close(db);
 		return -3;
 	}
 

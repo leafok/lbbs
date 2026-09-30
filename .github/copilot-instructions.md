@@ -5,7 +5,10 @@ Short, specific pointers to help an AI coding agent be productive in this repo.
 **Build & Test**
 - **Install deps**: libssh, libpcre2 and a MySQL/MariaDB client dev package (e.g., libssh-dev, libpcre2-dev, libmariadb-dev or libmysqlclient-dev). CI also installs `libsystemd-dev`.
 - **Build**: `autoreconf --install --force` then `./configure --enable-systemd --disable-silent-rules` and `make`.
-- **Run tests**: `make check` (tests are custom binaries built under `src/`, e.g. `test_trie_dict`). CI runs `make check` and `make distcheck` (see [.github/workflows/makefile.yml](.github/workflows/makefile.yml#L1-L40)).
+- **Testers**: test programs are declared as `test_PROGRAMS` in [src/Makefile.am](src/Makefile.am#L1-L40), so `make` builds them but `make check` does not execute them (there is no `TESTS` variable) — CI only compiles them. Run them manually from `src/` (they resolve `../log` and `../data` relative to that directory): `cd src && ./test_trie_dict`.
+  - Non-interactive, database-free testers: `test_trie_dict`, `test_file_loader`, `test_lml`, `test_memory_pool`, `test_bbs`, `test_bwf`, `test_hash_dict`, `test_ip_mask`. (`test_hash_dict` is heavy: it allocates ~2.7 GB and takes tens of seconds.)
+  - Interactive and/or DB-dependent testers (need a configured MySQL/MariaDB and a terminal): `test_section_list`, `test_article_favor`, `test_article_view_log`, `test_ssh_server`.
+- **CI**: runs `make`, `make check` and `make distcheck` (see [.github/workflows/makefile.yml](.github/workflows/makefile.yml#L1-L80)).
 
 **Run & Debug**
 - **Server binary**: `src/bbsd` (entry: [src/main.c](src/main.c#L1-L60)).
