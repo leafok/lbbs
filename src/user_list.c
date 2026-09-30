@@ -608,7 +608,7 @@ int user_list_pool_reload(int online_user)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		return -1;
 	}
 

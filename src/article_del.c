@@ -80,7 +80,7 @@ int article_del(const SECTION_LIST *p_section, const ARTICLE *p_article)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}

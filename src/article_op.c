@@ -59,7 +59,7 @@ int article_excerption_set(SECTION_LIST *p_section, int32_t aid, int8_t set)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
