@@ -115,6 +115,8 @@ int check_user(const char *username, const char *password)
 	int i;
 	int ok = 1;
 	char user_tz_env[BBS_user_tz_max_len + 2];
+	char username_f[BBS_username_max_len * 2 + 1];
+	char password_f[BBS_password_max_len * 2 + 1];
 
 	db = db_open();
 	if (db == NULL)
@@ -122,6 +124,10 @@ int check_user(const char *username, const char *password)
 		ret = -1;
 		goto cleanup;
 	}
+
+	// Secure SQL parameters
+	mysql_real_escape_string(db, username_f, username, (unsigned long)strnlen(username, sizeof(username)));
+	mysql_real_escape_string(db, password_f, password, (unsigned long)strnlen(password, sizeof(password)));
 
 	// Verify format
 	for (i = 0; ok && username[i] != '\0'; i++)
@@ -153,6 +159,8 @@ int check_user(const char *username, const char *password)
 		ret = 1;
 		goto cleanup;
 	}
+
+	mysql_real_escape_string(db, username_f, username, (unsigned long)strnlen(username, sizeof(username)));
 
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
@@ -211,7 +219,7 @@ int check_user(const char *username, const char *password)
 			 "WHERE user_err_login_log.username = '%s' "
 			 "AND (user_err_login_log.login_dt >= user_pubinfo.last_login_dt "
 			 "OR user_pubinfo.last_login_dt IS NULL)",
-			 username);
+			 username_f);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list error: %s", mysql_error(db));
@@ -239,7 +247,7 @@ int check_user(const char *username, const char *password)
 	snprintf(sql, sizeof(sql),
 			 "SELECT UID, username, p_login FROM user_list "
 			 "WHERE username = '%s' AND password = SHA2('%s', 256) AND enable",
-			 username, password);
+			 username_f, password_f);
 	if (mysql_query(db, sql) != 0)
 	{
 		log_error("Query user_list error: %s", mysql_error(db));
@@ -297,7 +305,7 @@ int check_user(const char *username, const char *password)
 		snprintf(sql, sizeof(sql),
 				 "INSERT INTO user_err_login_log(username, password, login_dt, login_ip) "
 				 "VALUES('%s', '%s', NOW(), '%s')",
-				 username, password, hostaddr_client);
+				 username_f, password_f, hostaddr_client);
 		if (mysql_query(db, sql) != 0)
 		{
 			log_error("Insert into user_err_login_log error: %s", mysql_error(db));
