@@ -125,10 +125,6 @@ int check_user(const char *username, const char *password)
 		goto cleanup;
 	}
 
-	// Secure SQL parameters
-	mysql_real_escape_string(db, username_f, username, (unsigned long)strnlen(username, sizeof(username)));
-	mysql_real_escape_string(db, password_f, password, (unsigned long)strnlen(password, sizeof(password)));
-
 	// Verify format
 	for (i = 0; ok && username[i] != '\0'; i++)
 	{
@@ -160,7 +156,9 @@ int check_user(const char *username, const char *password)
 		goto cleanup;
 	}
 
+	// Secure SQL parameters
 	mysql_real_escape_string(db, username_f, username, (unsigned long)strnlen(username, sizeof(username)));
+	mysql_real_escape_string(db, password_f, password, (unsigned long)strnlen(password, sizeof(password)));
 
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
