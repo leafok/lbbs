@@ -247,7 +247,7 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -470,7 +470,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -619,7 +619,7 @@ int article_modify(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTI
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -801,7 +801,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -1109,7 +1109,7 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}

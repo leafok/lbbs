@@ -54,7 +54,7 @@ int load_section_config_from_db(int update_gen_ex)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -208,7 +208,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -367,7 +367,7 @@ int set_last_article_op_log_from_db(void)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -418,7 +418,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}

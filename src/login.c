@@ -603,7 +603,7 @@ int user_online_update(const char *action)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		return -1;
 	}
 

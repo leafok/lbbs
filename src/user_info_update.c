@@ -53,7 +53,7 @@ int user_intro_edit(int uid)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -154,7 +154,7 @@ int user_intro_edit(int uid)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -222,7 +222,7 @@ int user_sign_edit(int uid)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
@@ -324,7 +324,7 @@ int user_sign_edit(int uid)
 	db = db_open();
 	if (db == NULL)
 	{
-		log_error("db_open() error: %s", mysql_error(db));
+		log_error("db_open() error");
 		ret = -1;
 		goto cleanup;
 	}
