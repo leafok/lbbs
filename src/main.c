@@ -523,7 +523,7 @@ cleanup:
 	}
 	if (unlink(VAR_USER_LIST_SHM) < 0)
 	{
-		log_error("unlink(%s) error", VAR_SECTION_LIST_SHM);
+		log_error("unlink(%s) error", VAR_USER_LIST_SHM);
 	}
 
 	log_common("Main process exit normally");
