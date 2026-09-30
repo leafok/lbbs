@@ -59,6 +59,7 @@ int bwf_load(const char *filename)
 		{
 			log_error("Data line %d (len=%zu) is truncated", line_id, len_line);
 			bwf_pattern_str[0] = '\0';
+			fclose(fp);
 			return -3;
 		}
 
@@ -82,6 +83,7 @@ int bwf_load(const char *filename)
 		{
 			log_error("Data in %s exceed length limit %zu", filename, sizeof(bwf_pattern_str) - 1);
 			bwf_pattern_str[0] = '\0';
+			fclose(fp);
 			return -3;
 		}
 
@@ -143,6 +145,11 @@ int check_badwords(char *str, char c_mask)
 	}
 
 	match_data = pcre2_match_data_create_from_pattern(bwf_code, NULL);
+	if (match_data == NULL)
+	{
+		log_error("pcre2_match_data_create_from_pattern() error: OOM");
+		return -1;
+	}
 
 	while (1)
 	{
@@ -155,10 +162,13 @@ int check_badwords(char *str, char c_mask)
 		else if (ret < 0)
 		{
 			log_error("pcre2_match() error: %d", ret);
+			break;
 		}
 		else if (ret == 0)
 		{
 			log_error("Vector of offsets is too small");
+			ret = -2;
+			break;
 		}
 		else // ret >= 1
 		{
@@ -171,6 +181,7 @@ int check_badwords(char *str, char c_mask)
 				log_error("Bug: match pattern #%d of %d with invalid offsets [%zu, %zu)",
 						  i, match_count, ovector[i * 2], ovector[i * 2 + 1]);
 				ret = -2;
+				break;
 			}
 			else
 			{
