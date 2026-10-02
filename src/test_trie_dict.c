@@ -13,6 +13,7 @@
 #include "log.h"
 #include "trie_dict.h"
 #include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -112,7 +113,7 @@ int main(int argc, char *argv[])
 		}
 		else if (value != TEST_VAL >> i)
 		{
-			printf("Value of [%s] is incorrect (%ld != %ld)\n", keys[i], value, TEST_VAL >> i);
+			printf("Value of [%s] is incorrect (%" PRId64 " != %" PRId64 ")\n", keys[i], value, TEST_VAL >> i);
 		}
 	}
 
@@ -157,7 +158,7 @@ int main(int argc, char *argv[])
 			}
 			else if (value != TEST_VAL >> i)
 			{
-				printf("Value of [%s] is incorrect (%ld != %ld)\n", keys[i], value, TEST_VAL >> i);
+				printf("Value of [%s] is incorrect (%" PRId64 " != %" PRId64 ")\n", keys[i], value, TEST_VAL >> i);
 			}
 		}
 	}
@@ -203,7 +204,7 @@ int main(int argc, char *argv[])
 			}
 			else if (value != TEST_VAL << i)
 			{
-				printf("Value of [%s] is incorrect (%ld != %ld)\n", keys[i], value, TEST_VAL << i);
+				printf("Value of [%s] is incorrect (%" PRId64 " != %" PRId64 ")\n", keys[i], value, TEST_VAL << i);
 			}
 		}
 	}

@@ -183,7 +183,7 @@ int memory_pool_check_node(MEMORY_POOL *p_pool, void *p_node)
 			else
 			{
 				log_error("Address of node (%p) is not aligned with border of chunk %d [%p, %p)",
-						  p_node, i, p_pool->p_chunks[i], (char *)(p_pool->p_chunks[i]) + chunk_size);
+						  p_node, i, p_pool->p_chunks[i], (void *)((char *)(p_pool->p_chunks[i]) + chunk_size));
 				return -3;
 			}
 		}
