@@ -27,6 +27,7 @@
 #include "section_list_loader.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -751,7 +752,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 						ret = hash_dict_del(hash_dict_pid_sockaddr, (uint64_t)pid);
 						if (ret < 0)
 						{
-							log_error("hash_dict_del(hash_dict_pid_sockaddr, %lu) error", (uint64_t)pid);
+							log_error("hash_dict_del(hash_dict_pid_sockaddr, %" PRIu64 ") error", (uint64_t)pid);
 						}
 					}
 				}
@@ -977,7 +978,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 								ret = hash_dict_set(hash_dict_pid_sockaddr, (uint64_t)pid, sin.sin_addr.s_addr);
 								if (ret < 0)
 								{
-									log_error("hash_dict_set(hash_dict_pid_sockaddr, %lu, %s) error", (uint64_t)pid, hostaddr_client);
+									log_error("hash_dict_set(hash_dict_pid_sockaddr, %" PRIu64 ", %s) error", (uint64_t)pid, hostaddr_client);
 								}
 
 								if (j == 0)
@@ -995,7 +996,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 								else
 								{
 									// Increase connection count from this IP
-									log_common("Accept %s connection from %s:%d, already have %ld connections",
+									log_common("Accept %s connection from %s:%d, already have %" PRId64 " connections",
 											   (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j);
 
 									ret = hash_dict_inc(hash_dict_sockaddr_count, (uint64_t)sin.sin_addr.s_addr, 1);
@@ -1008,7 +1009,7 @@ int net_server(const char *hostaddr, in_port_t port[])
 						}
 						else
 						{
-							log_error("Rejected %s connection from %s:%d over limit per IP (%ld >= %d)",
+							log_error("Rejected %s connection from %s:%d over limit per IP (%" PRId64 " >= %d)",
 									  (SSH_v2 ? "SSH" : "telnet"), hostaddr_client, port_client, j, BBS_max_client_per_ip);
 						}
 					}
