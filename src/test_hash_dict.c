@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 		}
 		if (value != i * 3 + 7)
 		{
-			printf("hash_dict_get(%" PRIu64 ") value=%ld error\n", key, value);
+			printf("hash_dict_get(%" PRIu64 ") value=%" PRId64 " error\n", key, value);
 			break;
 		}
 	}
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 		}
 		if (value != i * 3 + 7 + i * 5 + 17)
 		{
-			printf("hash_dict_get(%" PRIu64 ") value=%ld error\n", key, value);
+			printf("hash_dict_get(%" PRIu64 ") value=%" PRId64 " error\n", key, value);
 			break;
 		}
 	}
