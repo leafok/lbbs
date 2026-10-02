@@ -13,6 +13,7 @@
 #include "hash_dict.h"
 #include "log.h"
 #include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
 		ret = hash_dict_get(p_dict, key, &value);
 		if (ret != 0)
 		{
-			printf("hash_dict_get(%lu) ret=%d error\n", key, ret);
+			printf("hash_dict_get(%" PRIu64 ") ret=%d error\n", key, ret);
 			break;
 		}
 	}
@@ -59,14 +60,14 @@ int main(int argc, char *argv[])
 		{
 			if (hash_dict_inc(p_dict, key, i * 3 + 7) != 0)
 			{
-				printf("hash_dict_inc(%lu) error\n", key);
+				printf("hash_dict_inc(%" PRIu64 ") error\n", key);
 				break;
 			}
 		}
 
 		if (hash_dict_set(p_dict, key, i * 3 + 7) != 0)
 		{
-			printf("hash_dict_set(%lu) error\n", key);
+			printf("hash_dict_set(%" PRIu64 ") error\n", key);
 			break;
 		}
 	}
@@ -83,12 +84,12 @@ int main(int argc, char *argv[])
 		ret = hash_dict_get(p_dict, key, &value);
 		if (ret != 1)
 		{
-			printf("hash_dict_get(%lu) ret=%d error\n", key, ret);
+			printf("hash_dict_get(%" PRIu64 ") ret=%d error\n", key, ret);
 			break;
 		}
 		if (value != i * 3 + 7)
 		{
-			printf("hash_dict_get(%lu) value=%ld error\n", key, value);
+			printf("hash_dict_get(%" PRIu64 ") value=%ld error\n", key, value);
 			break;
 		}
 	}
@@ -98,7 +99,7 @@ int main(int argc, char *argv[])
 		key = i * 37 + 13;
 		if (hash_dict_inc(p_dict, key, i * 5 + 17) != 1)
 		{
-			printf("hash_dict_inc(%lu) error\n", key);
+			printf("hash_dict_inc(%" PRIu64 ") error\n", key);
 			break;
 		}
 	}
@@ -109,12 +110,12 @@ int main(int argc, char *argv[])
 		ret = hash_dict_get(p_dict, key, &value);
 		if (ret != 1)
 		{
-			printf("hash_dict_get(%lu) ret=%d error\n", key, ret);
+			printf("hash_dict_get(%" PRIu64 ") ret=%d error\n", key, ret);
 			break;
 		}
 		if (value != i * 3 + 7 + i * 5 + 17)
 		{
-			printf("hash_dict_get(%lu) value=%ld error\n", key, value);
+			printf("hash_dict_get(%" PRIu64 ") value=%ld error\n", key, value);
 			break;
 		}
 	}
@@ -130,7 +131,7 @@ int main(int argc, char *argv[])
 		key = i * 37 + 13;
 		if (hash_dict_del(p_dict, key) != 1)
 		{
-			printf("hash_dict_del(%lu) error\n", key);
+			printf("hash_dict_del(%" PRIu64 ") error\n", key);
 			break;
 		}
 	}
@@ -147,7 +148,7 @@ int main(int argc, char *argv[])
 		ret = hash_dict_get(p_dict, key, &value);
 		if (ret != 0)
 		{
-			printf("hash_dict_get(%lu) ret=%d error\n", key, ret);
+			printf("hash_dict_get(%" PRIu64 ") ret=%d error\n", key, ret);
 			break;
 		}
 	}
@@ -157,7 +158,7 @@ int main(int argc, char *argv[])
 		key = i * 37 + 13;
 		if (hash_dict_del(p_dict, key) != 0)
 		{
-			printf("hash_dict_del(%lu) error\n", key);
+			printf("hash_dict_del(%" PRIu64 ") error\n", key);
 			break;
 		}
 	}
