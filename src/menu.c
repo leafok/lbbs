@@ -820,7 +820,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 					{
 						if (p_menu_set->p_menu_screen_buf_free + 1 > q)
 						{
-							log_error("Menu screen buffer depleted (%p + 1 > %p)", p_menu_set->p_menu_screen_buf_free, q);
+							log_error("Menu screen buffer depleted (%p + 1 > %p)",
+									  (void *)(p_menu_set->p_menu_screen_buf_free), (void *)q);
 							ret = -3;
 							goto cleanup;
 						}
@@ -834,7 +835,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 					// Clear line
 					if (p_menu_set->p_menu_screen_buf_free + strlen(CTRL_SEQ_CLR_LINE) > q)
 					{
-						log_error("Menu screen buffer depleted (%p + %zu > %p)", p_menu_set->p_menu_screen_buf_free, strlen(CTRL_SEQ_CLR_LINE), q);
+						log_error("Menu screen buffer depleted (%p + %zu > %p)",
+								  (void *)(p_menu_set->p_menu_screen_buf_free), strlen(CTRL_SEQ_CLR_LINE), (void *)q);
 						ret = -3;
 						goto cleanup;
 					}
@@ -845,7 +847,8 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 					{
 						if (p_menu_set->p_menu_screen_buf_free + 2 > q)
 						{
-							log_error("Menu screen buffer depleted (%p + 2 > %p)", p_menu_set->p_menu_screen_buf_free, q);
+							log_error("Menu screen buffer depleted (%p + 2 > %p)",
+									  (void *)(p_menu_set->p_menu_screen_buf_free), (void *)q);
 							ret = -3;
 							goto cleanup;
 						}
