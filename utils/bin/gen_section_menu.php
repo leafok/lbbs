@@ -133,6 +133,10 @@ MENU;
 			$display_row = ($s_index == 0 ? 4 : 0);
 
 			$article_count = $section['udf_values']['article_count'];
+			if ($article_count < 1)
+			{
+				$article_count = 1;
+			}
 
 			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ＋  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
@@ -321,6 +325,10 @@ MENU;
 		foreach ($section_class["sections"] as $s_index => $section)
 		{
 			$article_count = $section['udf_values']['article_count'];
+			if ($article_count < 1)
+			{
+				$article_count = 1;
+			}
 
 			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ＋  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
@@ -361,6 +369,10 @@ MENU;
 		foreach ($section_class["sections"] as $s_index => $section)
 		{
 			$article_count = $section['udf_values']['article_count'];
+			if ($article_count < 1)
+			{
+				$article_count = 1;
+			}
 
 			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ＋  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
