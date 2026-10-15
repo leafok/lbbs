@@ -93,10 +93,8 @@ MENU;
 		exit(-1);
 	}
 
-	chdir(dirname($_SERVER["argv"][0]));
-
-	require_once "../lib/db_open.inc.php";
-	require_once "../lib/str_process.inc.php";
+	require_once __DIR__ . "/../lib/db_open.inc.php";
+	require_once __DIR__ . "/../lib/str_process.inc.php";
 
 	// Generate menu screen
 	$menu_screen = <<<MENU
@@ -147,7 +145,7 @@ MENU;
 
 		if ($buffer !== false)
 		{
-			$menu_output_path = "../../var/gen_ex/" . $row["SID"];
+			$menu_output_path = __DIR__ . "/../../var/gen_ex/" . $row["SID"];
 			file_put_contents($menu_output_path, $menu_screen . $buffer);
 
 			$sql = "UPDATE section_config SET ex_menu_tm = NOW(), ex_menu_update = 0 WHERE SID = " . $row["SID"];

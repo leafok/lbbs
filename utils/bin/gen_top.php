@@ -5,13 +5,11 @@
 		exit(-1);
 	}
 
-	chdir(dirname($_SERVER["argv"][0]));
+	require_once __DIR__ . "/../lib/db_open.inc.php";
+	require_once __DIR__ . "/../lib/str_process.inc.php";
 
-	require_once "../lib/db_open.inc.php";
-	require_once "../lib/str_process.inc.php";
-
-	$text_file_path = "../../var/bbs_top.txt";
-	$menu_file_path = "../../var/bbs_top_menu.conf";
+	$text_file_path = __DIR__ . "/../../var/bbs_top.txt";
+	$menu_file_path = __DIR__ . "/../../var/bbs_top_menu.conf";
 
 	$buffer_text =
 		"                     \033[1;34m-----\033[37m=====\033[41;37m 本站十大热门话题 \033[40m=====\033[34m-----\033[m\n\n";
