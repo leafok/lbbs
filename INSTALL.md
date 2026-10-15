@@ -2,7 +2,7 @@
 
 The Chinese version of this installation guide is available at [INSTALL.zh_CN.md](INSTALL.zh_CN.md).
 
-To install LBBS on Linux (e.g., Debian 13, CentOS Stream 10), please perform the following steps:
+To install LBBS on Linux (e.g., Debian 13), please perform the following steps:
 
 ## 0. Prerequisites
 
@@ -22,12 +22,7 @@ It is highly recommended to complete the web version configuration steps first a
 
 **Debian / Ubuntu:**
 ```bash
-sudo apt-get install -y libssh-dev libsystemd-dev
-```
-
-**CentOS / RHEL:**
-```bash
-sudo dnf install -y libssh-devel systemd-devel
+sudo apt-get install -y gcc make autoconf automake libtool pkg-config libpcre2-dev libssh-dev libsystemd-dev libmysqlclient-dev
 ```
 
 **MSYS2 with MinGW-w64 toolchain:**
