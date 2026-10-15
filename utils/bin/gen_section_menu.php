@@ -100,7 +100,7 @@ MENU;
 
 		$section_count = count($section_class["sections"]);
 
-		$title_f = str_repeat(" ", 5 - intval(log10($section_count))) . $section_count . " ＋  " .
+		$title_f = str_repeat(" ", 5 - intval(log10($section_count == 0 ? 1 : $section_count))) . $section_count . " ＋  " .
 			$section_class['name'] . str_repeat(" ", 32 - strlen($section_class['name'])) .
 			"[" . addslashes($section_class['title']) . "]";
 
@@ -133,12 +133,8 @@ MENU;
 			$display_row = ($s_index == 0 ? 4 : 0);
 
 			$article_count = $section['udf_values']['article_count'];
-			if ($article_count < 1)
-			{
-				$article_count = 1;
-			}
 
-			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ＋  " .
+			$title_f = str_repeat(" ", 5 - intval(log10($article_count == 0 ? 1 : $article_count))) . $article_count . " ＋  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
 				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
 				($section['udf_values']['section_master'] == "" ? "诚征版主中" : $section['udf_values']['section_master']);
@@ -249,7 +245,7 @@ MENU;
 
 		$section_count = count($section_class["sections"]);
 
-		$title_f = str_repeat(" ", 5 - intval(log10($section_count))) . $section_count . " ＋  " .
+		$title_f = str_repeat(" ", 5 - intval(log10($section_count == 0 ? 1 : $section_count))) . $section_count . " ＋  " .
 			$section_class['name'] . str_repeat(" ", 32 - strlen($section_class['name'])) .
 			"[" . addslashes($section_class['title']) . "]";
 
@@ -325,12 +321,8 @@ MENU;
 		foreach ($section_class["sections"] as $s_index => $section)
 		{
 			$article_count = $section['udf_values']['article_count'];
-			if ($article_count < 1)
-			{
-				$article_count = 1;
-			}
 
-			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ＋  " .
+			$title_f = str_repeat(" ", 5 - intval(log10($article_count == 0 ? 1 : $article_count))) . $article_count . " ＋  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
 				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
 				($section['udf_values']['section_master'] == "" ? "诚征版主中" : $section['udf_values']['section_master']);
@@ -369,12 +361,8 @@ MENU;
 		foreach ($section_class["sections"] as $s_index => $section)
 		{
 			$article_count = $section['udf_values']['article_count'];
-			if ($article_count < 1)
-			{
-				$article_count = 1;
-			}
 
-			$title_f = str_repeat(" ", 5 - intval(log10($article_count))) . $article_count . " ＋  " .
+			$title_f = str_repeat(" ", 5 - intval(log10($article_count == 0 ? 1 : $article_count))) . $article_count . " ＋  " .
 				$section['name'] . str_repeat(" ", 20 - strlen($section['name'])) .
 				$class_title_f . addslashes($section['title']) . str_repeat(" ", 22 - str_length($section['title'])) .
 				($section['udf_values']['section_master'] == "" ? "诚征版主中" : $section['udf_values']['section_master']);
