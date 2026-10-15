@@ -1,5 +1,5 @@
 # Stage for Build
-FROM debian:13-slim AS builder
+FROM ubuntu:26.04 AS builder
 
 RUN apt-get update && apt-get install -y \
     gcc make gdb autoconf automake libtool pkg-config \
@@ -15,7 +15,7 @@ RUN ./configure --prefix=/usr/local/lbbs \
     && make && make install
 
 # Stage for Runtime
-FROM debian:13-slim
+FROM ubuntu:26.04
 
 # Install locales package and generate en_US.UTF-8
 RUN apt-get update && apt-get install -y locales \
