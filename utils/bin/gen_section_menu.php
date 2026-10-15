@@ -5,14 +5,12 @@
 		exit(-1);
 	}
 
-	chdir(dirname($_SERVER["argv"][0]));
+	require_once __DIR__ . "/../lib/db_open.inc.php";
+	require_once __DIR__ . "/../lib/str_process.inc.php";
+	require_once __DIR__ . "/../lib/section_list.inc.php";
 
-	require_once "../lib/db_open.inc.php";
-	require_once "../lib/str_process.inc.php";
-	require_once "../lib/section_list.inc.php";
-
-	$menu_input_path = "../../conf/menu.conf";
-	$menu_output_path = "../../var/menu_merged.conf";
+	$menu_input_path = __DIR__ . "/../../conf/menu.conf";
+	$menu_output_path = __DIR__ . "/../../var/menu_merged.conf";
 
 	$buffer = file_get_contents($menu_input_path);
 	if ($buffer == false)
