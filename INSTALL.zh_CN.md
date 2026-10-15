@@ -2,7 +2,7 @@
 
 英文版本的安装说明位于 [INSTALL.md](INSTALL.md)。
 
-要在 Linux（例如：Debian 13、CentOS Stream 10）上安装 LBBS，请按照以下步骤操作：
+要在 Linux（例如：Debian 13）上安装 LBBS，请按照以下步骤操作：
 
 ## 0. 准备工作
 
@@ -22,12 +22,7 @@
 
 **Debian / Ubuntu：**
 ```bash
-sudo apt-get install -y libssh-dev libsystemd-dev
-```
-
-**CentOS / RHEL：**
-```bash
-sudo dnf install -y libssh-devel systemd-devel
+sudo apt-get install -y gcc make autoconf automake libtool pkg-config libpcre2-dev libssh-dev libsystemd-dev libmysqlclient-dev
 ```
 
 **MSYS2 with MinGW-w64 工具链：**
