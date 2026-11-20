@@ -765,7 +765,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 			}
 			else // BEGIN of menu screen
 			{
-				if (p_menu_set->menu_item_count >= MAX_MENUS)
+				if (p_menu_set->menu_screen_count >= MAX_MENUS)
 				{
 					log_error("Menu screen count (%d) exceed limit (%d)", p_menu_set->menu_screen_count, MAX_MENUS);
 					ret = -3;

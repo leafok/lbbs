@@ -155,7 +155,7 @@ inline MENU_SCREEN *get_menu_screen_by_id(MENU_SET *p_menu_set, MENU_SCREEN_ID m
 		return NULL;
 	}
 
-	return (MENU_SCREEN *)((char *)(p_menu_set->p_menu_screen_pool) + sizeof(MENU_ITEM) * menu_screen_id);
+	return (MENU_SCREEN *)((char *)(p_menu_set->p_menu_screen_pool) + sizeof(MENU_SCREEN) * menu_screen_id);
 }
 
 #endif //_MENU_H_
