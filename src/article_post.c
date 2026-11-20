@@ -276,6 +276,11 @@ int article_post(const SECTION_LIST *p_section, ARTICLE *p_article_new)
 			len_content += snprintf(content + len_content,
 									ARTICLE_CONTENT_MAX_LEN - (size_t)len_content,
 									"\n\n--\n%s\n", row[0]);
+			if (len_content >= (long)ARTICLE_CONTENT_MAX_LEN)
+			{
+				// snprintf truncated: the signature filled the rest of content
+				len_content = (long)ARTICLE_CONTENT_MAX_LEN - 1;
+			}
 		}
 		mysql_free_result(rs);
 		rs = NULL;
@@ -887,6 +892,12 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 
 		// Apply LML render to content body
 		len = lml_render(row[1], content_f, ARTICLE_CONTENT_MAX_LEN, MAX_EDITOR_DATA_LINE_LENGTH - 3, 1);
+		if (len < 0)
+		{
+			log_error("lml_render(aid=%d) error", p_article->aid);
+			ret = -1;
+			goto cleanup;
+		}
 		content_f[len] = '\0';
 
 		// Remove control sequence
@@ -1138,6 +1149,11 @@ int article_reply(const SECTION_LIST *p_section, const ARTICLE *p_article, ARTIC
 			len_content += snprintf(content + len_content,
 									ARTICLE_CONTENT_MAX_LEN - (size_t)len_content,
 									"\n\n--\n%s\n", row[0]);
+			if (len_content >= (long)ARTICLE_CONTENT_MAX_LEN)
+			{
+				// snprintf truncated: the signature filled the rest of content
+				len_content = (long)ARTICLE_CONTENT_MAX_LEN - 1;
+			}
 		}
 		mysql_free_result(rs);
 		rs = NULL;
