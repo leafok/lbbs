@@ -199,18 +199,18 @@ long split_data_lines(const char *p_buf, int max_display_len, long *p_line_offse
 
 	do
 	{
-		len = split_line(p_buf, max_display_len, &end_of_line, &display_len, skip_ctrl_seq);
-
-		if (p_line_widths)
-		{
-			p_line_widths[line_cnt] = display_len;
-		}
-
 		// Exceed max_line_cnt
 		if (line_cnt + 1 >= line_offsets_count)
 		{
 			log_debug("Line count %d reaches limit %ld", line_cnt + 1, line_offsets_count);
 			return line_cnt;
+		}
+
+		len = split_line(p_buf, max_display_len, &end_of_line, &display_len, skip_ctrl_seq);
+
+		if (p_line_widths)
+		{
+			p_line_widths[line_cnt] = display_len;
 		}
 
 		p_line_offsets[line_cnt + 1] = p_line_offsets[line_cnt] + len;
