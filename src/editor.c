@@ -392,18 +392,26 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			// 	p_editor_data->display_line_lengths[j] = p_editor_data->display_line_lengths[j - 1];
 			// 	p_editor_data->display_line_widths[j] = p_editor_data->display_line_widths[j - 1];
 			// }
-			memmove(p_editor_data->p_display_lines + last_display_line + 2,
-					p_editor_data->p_display_lines + last_display_line + 1,
-					(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
-						sizeof(p_editor_data->p_display_lines[last_display_line + 1]));
-			memmove(p_editor_data->display_line_lengths + last_display_line + 2,
-					p_editor_data->display_line_lengths + last_display_line + 1,
-					(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
-						sizeof(p_editor_data->display_line_lengths[last_display_line + 1]));
-			memmove(p_editor_data->display_line_widths + last_display_line + 2,
-					p_editor_data->display_line_widths + last_display_line + 1,
-					(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
-						sizeof(p_editor_data->display_line_widths[last_display_line + 1]));
+			if (p_editor_data->display_line_total >= last_display_line + 1)
+			{
+				memmove(p_editor_data->p_display_lines + last_display_line + 2,
+						p_editor_data->p_display_lines + last_display_line + 1,
+						(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
+							sizeof(p_editor_data->p_display_lines[last_display_line + 1]));
+				memmove(p_editor_data->display_line_lengths + last_display_line + 2,
+						p_editor_data->display_line_lengths + last_display_line + 1,
+						(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
+							sizeof(p_editor_data->display_line_lengths[last_display_line + 1]));
+				memmove(p_editor_data->display_line_widths + last_display_line + 2,
+						p_editor_data->display_line_widths + last_display_line + 1,
+						(size_t)(p_editor_data->display_line_total - last_display_line - 1) *
+							sizeof(p_editor_data->display_line_widths[last_display_line + 1]));
+			}
+			else
+			{
+				log_error("Unexpected error: display_line_total(%ld) < last_display_line(%ld) + 1",
+						  p_editor_data->display_line_total, last_display_line);
+			}
 
 			last_display_line++;
 			*p_last_updated_line = p_editor_data->display_line_total;
