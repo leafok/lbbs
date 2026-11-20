@@ -259,7 +259,7 @@ cleanup:
 		free(p_data_new);
 	}
 
-	if (p_data != NULL && munmap(p_data, len_data) < 0)
+	if (p_data != NULL && p_data != MAP_FAILED && munmap(p_data, len_data) < 0)
 	{
 		log_error("munmap() error (%d)", errno);
 	}
