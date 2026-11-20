@@ -149,7 +149,8 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		p_data_line[current_data_line_length] = '\0';
 	}
 
-	memset(p_editor_data->p_display_lines + p_editor_data->display_line_total, 0, MAX_EDITOR_DATA_LINES - (size_t)p_editor_data->display_line_total);
+	memset(p_editor_data->p_display_lines + p_editor_data->display_line_total, 0,
+		   (size_t)(MAX_EDITOR_DATA_LINES - p_editor_data->display_line_total) * sizeof(p_editor_data->p_display_lines[0]));
 
 	return p_editor_data;
 }
