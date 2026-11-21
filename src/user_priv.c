@@ -114,6 +114,30 @@ int getpriv(BBS_user_priv *p_priv, int sid, int *p_is_favor)
 	return (sid >= 0 ? p_priv->g_priv : S_NONE);
 }
 
+// setpriv() refuses a new section once s_priv_list holds BBS_max_section entries. The
+// passes in load_priv() keep going with the privileges they already gathered, and a
+// refused entry reads back as the global word, so a dropped board ban or read restriction
+// quietly loosens access. Remember the first refusal of each pass and report how many
+// there were once the pass is over.
+inline static void count_priv_dropped(int *dropped, int *first_sid, int sid)
+{
+	if (*dropped == 0)
+	{
+		*first_sid = sid;
+	}
+
+	(*dropped)++;
+}
+
+inline static void log_priv_dropped(int uid, const char *stage, int dropped, int first_sid)
+{
+	if (dropped > 0)
+	{
+		log_error("Drop privilege of %d section(s) of user %d from SID %d at %s stage: s_priv_list limit %d reached",
+			dropped, uid, first_sid, stage, BBS_max_section);
+	}
+}
+
 int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 {
 	MYSQL_RES *rs;
@@ -121,6 +145,9 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 	char sql[SQL_BUFFER_LEN];
 	int priv;
 	int is_favor;
+	int sid;
+	int dropped;
+	int first_sid;
 
 	p_priv->uid = uid;
 	p_priv->level = (uid == 0 ? P_GUEST : P_USER);
@@ -192,13 +219,20 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 		log_error("Get section_master data failed");
 		return -1;
 	}
+
+	dropped = 0;
 	while ((row = mysql_fetch_row(rs)))
 	{
+		sid = atoi(row[0]);
 		p_priv->level |= (atoi(row[1]) ? P_MAN_M : P_MAN_S);
-		priv = (getpriv(p_priv, atoi(row[0]), &is_favor) | (atoi(row[1]) ? S_MAN_M : S_MAN_S));
-		setpriv(p_priv, atoi(row[0]), priv, is_favor);
+		priv = (getpriv(p_priv, sid, &is_favor) | (atoi(row[1]) ? S_MAN_M : S_MAN_S));
+		if (setpriv(p_priv, sid, priv, is_favor) < 0)
+		{
+			count_priv_dropped(&dropped, &first_sid, sid);
+		}
 	}
 	mysql_free_result(rs);
+	log_priv_dropped(uid, "section master", dropped, first_sid);
 
 	// Section status
 	snprintf(sql, sizeof(sql),
@@ -216,9 +250,12 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 		log_error("Get section_config data failed");
 		return -1;
 	}
+
+	dropped = 0;
 	while ((row = mysql_fetch_row(rs)))
 	{
-		int priv = getpriv(p_priv, atoi(row[0]), &is_favor);
+		sid = atoi(row[0]);
+		priv = getpriv(p_priv, sid, &is_favor);
 		if (p_priv->level < atoi(row[2]))
 		{
 			priv &= (~S_LIST);
@@ -231,9 +268,13 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 		{
 			priv &= (~S_GETEXP);
 		}
-		setpriv(p_priv, atoi(row[0]), priv, is_favor);
+		if (setpriv(p_priv, sid, priv, is_favor) < 0)
+		{
+			count_priv_dropped(&dropped, &first_sid, sid);
+		}
 	}
 	mysql_free_result(rs);
+	log_priv_dropped(uid, "section status", dropped, first_sid);
 
 	// Section ban
 	snprintf(sql, sizeof(sql),
@@ -250,12 +291,19 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 		log_error("Get ban_user_list data failed");
 		return -1;
 	}
+
+	dropped = 0;
 	while ((row = mysql_fetch_row(rs)))
 	{
-		priv = getpriv(p_priv, atoi(row[0]), &is_favor) & (~S_POST);
-		setpriv(p_priv, atoi(row[0]), priv, is_favor);
+		sid = atoi(row[0]);
+		priv = getpriv(p_priv, sid, &is_favor) & (~S_POST);
+		if (setpriv(p_priv, sid, priv, is_favor) < 0)
+		{
+			count_priv_dropped(&dropped, &first_sid, sid);
+		}
 	}
 	mysql_free_result(rs);
+	log_priv_dropped(uid, "section ban", dropped, first_sid);
 
 	// User favor section
 	snprintf(sql, sizeof(sql),
@@ -271,16 +319,23 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 		log_error("Get section_favorite data failed");
 		return -1;
 	}
+
+	dropped = 0;
 	while ((row = mysql_fetch_row(rs)))
 	{
-		priv = getpriv(p_priv, atoi(row[0]), &is_favor);
+		sid = atoi(row[0]);
+		priv = getpriv(p_priv, sid, &is_favor);
 		if (!is_favor)
 		{
-			setpriv(p_priv, atoi(row[0]), priv, 1);
-			priv = getpriv(p_priv, atoi(row[0]), &is_favor);
+			if (setpriv(p_priv, sid, priv, 1) < 0)
+			{
+				count_priv_dropped(&dropped, &first_sid, sid);
+			}
+			priv = getpriv(p_priv, sid, &is_favor);
 		}
 	}
 	mysql_free_result(rs);
+	log_priv_dropped(uid, "section favorite", dropped, first_sid);
 
 	return 0;
 }
