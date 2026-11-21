@@ -67,3 +67,4 @@ lt-*.c
 /src/test_bwf
 /src/test_hash_dict
 /src/test_ip_mask
+/src/test_user_priv

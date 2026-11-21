@@ -30,6 +30,13 @@ struct shm_header_t
 	long line_total;
 };
 
+// The offset table is a long[] appended after the NUL-terminated data, and has to
+// start on a long boundary, which data_len + 1 does not generally provide.
+static inline size_t shm_offsets_offset(size_t data_len)
+{
+	return (sizeof(struct shm_header_t) + data_len + 1 + (sizeof(long) - 1)) / sizeof(long) * sizeof(long);
+}
+
 int load_file(const char *filename)
 {
 	char filepath[FILE_PATH_LEN];
@@ -81,7 +88,7 @@ int load_file(const char *filename)
 	line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_SPLIT_FILE_LINES, 1, NULL);
 
 	// Allocate shared memory
-	size = sizeof(struct shm_header_t) + data_len + 1 + sizeof(long) * (size_t)(line_total + 1);
+	size = shm_offsets_offset(data_len) + sizeof(long) * (size_t)(line_total + 1);
 
 	strncpy(filepath, filename, sizeof(filepath) - 1);
 	filepath[sizeof(filepath) - 1] = '\0';
@@ -131,8 +138,7 @@ int load_file(const char *filename)
 		return -2;
 	}
 
-	p_data = (char *)p_shm + sizeof(struct shm_header_t);
-	p_line_offsets = (long *)((char *)p_data + data_len + 1);
+	p_line_offsets = (long *)((char *)p_shm + shm_offsets_offset(data_len));
 	memcpy(p_line_offsets, line_offsets, sizeof(long) * (size_t)(line_total + 1));
 
 	if (munmap(p_shm, size) < 0)
@@ -226,7 +232,7 @@ void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long *p_li
 	*p_data_len = ((struct shm_header_t *)p_shm)->data_len;
 	*p_line_total = ((struct shm_header_t *)p_shm)->line_total;
 	*pp_data = (char *)p_shm + sizeof(struct shm_header_t);
-	*pp_line_offsets = (const long *)((const char *)(*pp_data) + *p_data_len + 1);
+	*pp_line_offsets = (const long *)((const char *)p_shm + shm_offsets_offset(*p_data_len));
 
 	return p_shm;
 }

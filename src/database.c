@@ -67,6 +67,7 @@ MYSQL *db_open(void)
 	if (mysql_ssl_set(db, NULL, NULL, (have_ca_cert ? DB_ca_cert : NULL), NULL, NULL) != 0)
 	{
 		log_error("mysql_ssl_set() error");
+		mysql_close(db);
 		return NULL;
 	}
 
@@ -74,12 +75,14 @@ MYSQL *db_open(void)
 	if (mysql_optionsv(db, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &verify_server_cert) != 0)
 	{
 		log_error("mysql_optionsv() error");
+		mysql_close(db);
 		return NULL;
 	}
 #else
 	if (mysql_options(db, MYSQL_OPT_SSL_MODE, &ssl_mode) != 0)
 	{
 		log_error("mysql_options() error");
+		mysql_close(db);
 		return NULL;
 	}
 #endif

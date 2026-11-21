@@ -673,6 +673,12 @@ int igetch(int timeout)
 
 		if (in_ascii)
 		{
+			if (i >= (int)sizeof(tmp) - 1) // Discard the sequence if it matches no known key
+			{
+				in_ascii = 0;
+				stdin_conv_offset = stdin_conv_len;
+				continue;
+			}
 			tmp[i++] = c;
 			if (i == 2 && (tmp[0] == 79 || tmp[0] == 91))
 			{

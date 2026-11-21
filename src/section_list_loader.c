@@ -145,6 +145,10 @@ int load_section_config_from_db(int update_gen_ex)
 			if (section_list_update(p_section, row[1], row[2], master_list) < 0)
 			{
 				log_error("section_list_update(sid=%d) error", p_section->sid);
+				if (section_list_rw_unlock(p_section) < 0)
+				{
+					log_error("section_list_rw_unlock(sid=%d) error", p_section->sid);
+				}
 				ret = -4;
 				break;
 			}

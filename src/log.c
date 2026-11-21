@@ -111,6 +111,10 @@ int log_printf(enum log_level_t log_level, const char *app_file, int app_line, c
 	int ret;
 
 	fp_log = (log_level == LOG_LEVEL_COMMON ? fp_common_log : fp_error_log);
+	if (fp_log == NULL)
+	{
+		fp_log = stderr; // Logging outside log_begin() must not take the process down
+	}
 
 	offset = log_head(buf, sizeof(buf), (int)log_level, app_file, app_line);
 

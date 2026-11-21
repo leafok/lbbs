@@ -198,7 +198,7 @@ int user_list_load(MYSQL *db, USER_LIST *p_list)
 		p_list->users[i].username[sizeof(p_list->users[i].username) - 1] = '\0';
 		strncpy(p_list->users[i].nickname, row[2], sizeof(p_list->users[i].nickname) - 1);
 		p_list->users[i].nickname[sizeof(p_list->users[i].nickname) - 1] = '\0';
-		p_list->users[i].gender = row[3][0];
+		p_list->users[i].gender = (row[3] == NULL ? '\0' : row[3][0]);
 		p_list->users[i].gender_pub = (int8_t)(row[4] == NULL ? 0 : atoi(row[4]));
 		p_list->users[i].life = (row[5] == NULL ? 0 : atoi(row[5]));
 		p_list->users[i].exp = (row[6] == NULL ? 0 : atoi(row[6]));

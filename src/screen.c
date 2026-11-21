@@ -101,7 +101,7 @@ int press_any_key_ex(const char *msg, int sec)
 	moveto(SCREEN_ROWS, 0);
 	clrtoeol();
 
-	prints(msg);
+	prints("%s", msg);
 	iflush();
 
 	return press_any_key_no_prompt(sec);
@@ -251,7 +251,7 @@ static int _str_input(char *buffer, int buf_size, int max_display_len, enum io_e
 			switch (echo_mode)
 			{
 			case DOECHO:
-				prints(input_str);
+				prints("%s", input_str);
 				break;
 			case NOECHO:
 				prints("**");

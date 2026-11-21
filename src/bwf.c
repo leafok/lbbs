@@ -55,7 +55,7 @@ int bwf_load(const char *filename)
 	while (fgets(line, sizeof(line), fp) != NULL)
 	{
 		len_line = strnlen(line, sizeof(line) - 1);
-		if (!feof(fp) && line[len_line - 1] != '\n')
+		if (len_line == 0 || (!feof(fp) && line[len_line - 1] != '\n'))
 		{
 			log_error("Data line %d (len=%zu) is truncated", line_id, len_line);
 			bwf_pattern_str[0] = '\0';

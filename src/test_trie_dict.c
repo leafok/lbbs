@@ -19,6 +19,12 @@
 #include <unistd.h>
 
 static const int64_t TEST_VAL = ((int64_t)(0xcb429a63a017661f)); // int64_t
+
+static inline int64_t test_val_lshift(int shift)
+{
+	// TEST_VAL is negative, and left shift of a negative operand is undefined
+	return (int64_t)((uint64_t)TEST_VAL << shift);
+}
 static const char TRIE_DICT_SHM_FILE[] = "~trie_dict_shm.dat";
 
 const char *keys[] = {
@@ -175,7 +181,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			ret = trie_dict_set(p_dict, keys[i], TEST_VAL << i);
+			ret = trie_dict_set(p_dict, keys[i], test_val_lshift(i));
 			if (ret != 1)
 			{
 				printf("Set existing [%s] with different value error (%d)\n", keys[i], ret);
@@ -202,9 +208,9 @@ int main(int argc, char *argv[])
 			{
 				printf("Get [%s] error (%d)\n", keys[i], ret);
 			}
-			else if (value != TEST_VAL << i)
+			else if (value != test_val_lshift(i))
 			{
-				printf("Value of [%s] is incorrect (%" PRId64 " != %" PRId64 ")\n", keys[i], value, TEST_VAL << i);
+				printf("Value of [%s] is incorrect (%" PRId64 " != %" PRId64 ")\n", keys[i], value, test_val_lshift(i));
 			}
 		}
 	}

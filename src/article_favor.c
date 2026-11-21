@@ -142,7 +142,7 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 
 	snprintf(sql_add, sizeof(sql_add),
 			 "INSERT IGNORE INTO article_favorite(AID, UID) VALUES ");
-	snprintf(sql_del, sizeof(sql_add),
+	snprintf(sql_del, sizeof(sql_del),
 			 "DELETE FROM article_favorite WHERE UID = %d AND AID IN (",
 			 p_favor->uid);
 
@@ -208,7 +208,7 @@ int article_favor_save_inc(const ARTICLE_FAVOR *p_favor)
 			cnt_total_del += (int)mysql_affected_rows(db);
 			cnt_pending_del = 0;
 
-			snprintf(sql_del, sizeof(sql_add),
+			snprintf(sql_del, sizeof(sql_del),
 					 "DELETE FROM article_favorite WHERE UID = %d AND AID IN (",
 					 p_favor->uid);
 		}

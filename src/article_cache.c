@@ -69,6 +69,7 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	long header_line_cnt;
 	size_t body_len;
 	long body_line_cnt;
+	long render_len;
 	char footer[ARTICLE_FOOTER_MAX_LEN];
 	size_t footer_len;
 	long footer_line_cnt;
@@ -136,7 +137,14 @@ int article_cache_generate(const char *cache_dir, const ARTICLE *p_article, cons
 	}
 
 	// Apply LML render to content body
-	body_len = (size_t)lml_render(content, content_f, ARTICLE_CONTENT_MAX_LEN, SCREEN_COLS, 0);
+	render_len = lml_render(content, content_f, ARTICLE_CONTENT_MAX_LEN, SCREEN_COLS, 0);
+	if (render_len < 0)
+	{
+		log_error("lml_render(aid=%d) error", p_article->aid);
+		close(fd);
+		return -4;
+	}
+	body_len = (size_t)render_len;
 	cache.data_len = header_len + body_len;
 
 	body_line_cnt = split_data_lines(content_f, SCREEN_COLS + 1, &(cache.line_offsets[header_line_cnt]),
@@ -248,6 +256,7 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 	if (fstat(fd, &sb) < 0)
 	{
 		log_error("fstat(fd) error (%d)", errno);
+		close(fd);
 		return -2;
 	}
 
@@ -257,18 +266,21 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 	if (p_mmap == MAP_FAILED)
 	{
 		log_error("mmap(%s) error (%d)", data_file, errno);
+		close(fd);
 		return -2;
 	}
 
 	if (close(fd) == -1)
 	{
 		log_error("close(%s) error (%d)", data_file, errno);
+		munmap(p_mmap, mmap_len);
 		return -2;
 	}
 
 	if (((ARTICLE_CACHE *)p_mmap)->mmap_len != mmap_len)
 	{
 		log_error("Inconsistent mmap len of article (cid=%d), %ld != %ld", p_article->cid, p_cache->mmap_len, mmap_len);
+		munmap(p_mmap, mmap_len);
 		return -3;
 	}
 
