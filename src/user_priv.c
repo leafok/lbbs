@@ -17,6 +17,7 @@
 #include "user_priv.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <mysql.h>
 
 BBS_user_priv BBS_priv;
@@ -32,8 +33,9 @@ inline static int search_priv(BBS_user_priv *p_priv, int sid, int *p_offset)
 	int left = 0;
 	int right = p_priv->s_count - 1;
 	int mid = 0;
+	int found = 0;
 
-	while (left < right)
+	while (left <= right)
 	{
 		mid = (left + right) / 2;
 
@@ -47,6 +49,7 @@ inline static int search_priv(BBS_user_priv *p_priv, int sid, int *p_offset)
 		}
 		else // if (sid == p_priv->s_priv_list[mid].sid)
 		{
+			found = 1;
 			left = mid;
 			break;
 		}
@@ -54,13 +57,12 @@ inline static int search_priv(BBS_user_priv *p_priv, int sid, int *p_offset)
 
 	*p_offset = left;
 
-	return (sid == p_priv->s_priv_list[left].sid);
+	return (found);
 }
 
 int setpriv(BBS_user_priv *p_priv, int sid, int priv, int is_favor)
 {
 	int offset;
-	int i;
 
 	if (sid == 0)
 	{
@@ -81,14 +83,16 @@ int setpriv(BBS_user_priv *p_priv, int sid, int priv, int is_favor)
 		return -1;
 	}
 
-	// move items at [left, p_priv->s_count - 1] to [left + 1, p_priv->s_count]
-	for (i = p_priv->s_count - 1; i >= offset; i--)
+	// move items at [offset, p_priv->s_count - 1] to [offset + 1, p_priv->s_count]
+	if (p_priv->s_count - 1 >= offset)
 	{
-		p_priv->s_priv_list[i + 1] = p_priv->s_priv_list[i];
+		memmove(&p_priv->s_priv_list[offset + 1], &p_priv->s_priv_list[offset],
+				(size_t)(p_priv->s_count - offset) * sizeof(p_priv->s_priv_list[0]));
 	}
+
 	p_priv->s_count++;
 
-	// insert new item at offset left
+	// insert new item at offset
 	p_priv->s_priv_list[offset].sid = sid;
 	p_priv->s_priv_list[offset].s_priv = priv;
 	p_priv->s_priv_list[offset].is_favor = is_favor;
@@ -122,6 +126,8 @@ int load_priv(MYSQL *db, BBS_user_priv *p_priv, int uid)
 	p_priv->level = (uid == 0 ? P_GUEST : P_USER);
 	p_priv->g_priv = S_DEFAULT;
 	p_priv->s_count = 0;
+
+	memset(p_priv->s_priv_list, 0, sizeof(p_priv->s_priv_list));
 
 	if (db == NULL)
 		return 1;
