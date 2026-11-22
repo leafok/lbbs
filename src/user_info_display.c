@@ -30,6 +30,7 @@ enum _user_info_display_constant_t
 	LAST_LOGIN_DT_MAX_LEN = 50,
 	ASTRO_STR_MAX_LEN = 64,
 	USER_INFO_MAX_LEN = 8192,
+	USER_INFO_MAX_LINE = BBS_user_intro_max_line + 9, // The intro plus the header lines above it
 };
 
 static int display_user_info_key_handler(int *p_key, DISPLAY_CTX *p_ctx)
@@ -58,7 +59,7 @@ int user_info_display(USER_INFO *p_user_info)
 	char intro_f[BBS_user_intro_max_len + 1];
 	int intro_len;
 	char user_info_f[USER_INFO_MAX_LEN];
-	long line_offsets[BBS_user_intro_max_line + 1];
+	long line_offsets[USER_INFO_MAX_LINE];
 	long lines;
 	char *p;
 	const char *q;
@@ -179,7 +180,7 @@ int user_info_display(USER_INFO *p_user_info)
 			 (intro_len > 0 ? "\033[0;36m个人说明档如下: \033[m" : "\033[0;36m没有个人说明档\033[m"),
 			 intro_f);
 
-	lines = split_data_lines(user_info_f, SCREEN_COLS + 1, line_offsets, MIN(SCREEN_ROWS - 1, BBS_user_intro_max_line + 9), 1, NULL);
+	lines = split_data_lines(user_info_f, SCREEN_COLS + 1, line_offsets, MIN(SCREEN_ROWS - 1, USER_INFO_MAX_LINE), 1, NULL);
 
 	clearscr();
 	display_data(user_info_f, lines, line_offsets, 1, display_user_info_key_handler, DATA_READ_HELP);
