@@ -104,6 +104,11 @@ static int load_chicken(void)
 		}
 		last = 1;
 		fp = fopen(fname, "r");
+		if (fp == NULL)
+		{
+			log_error("Error!!cannot open file '%s'!", fname);
+			return -1;
+		}
 	}
 	else
 	{
