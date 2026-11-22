@@ -47,7 +47,7 @@ int user_intro_edit(int uid)
 	char intro[BBS_user_intro_max_len + 1];
 	char intro_f[BBS_user_intro_max_len * 2 + 1];
 	long len_intro = 0L;
-	long line_offsets[BBS_user_intro_max_line + 1];
+	long line_offsets[BBS_user_intro_max_line + 2];
 	long lines = 0L;
 
 	db = db_open();
@@ -151,6 +151,11 @@ int user_intro_edit(int uid)
 		break;
 	}
 
+	if (SYS_server_exit) // Do not save data on shutdown
+	{
+		goto cleanup;
+	}
+
 	db = db_open();
 	if (db == NULL)
 	{
@@ -205,7 +210,7 @@ int user_sign_edit(int uid)
 	char sign[BBS_user_sign_max_len + 1];
 	char sign_f[BBS_user_sign_max_len * 2 + 1];
 	long len_sign = 0L;
-	long line_offsets[BBS_user_sign_max_line + 1];
+	long line_offsets[BBS_user_sign_max_line + 2];
 	long lines = 0L;
 	char buf[2] = "";
 	int sign_id = 0;
@@ -319,6 +324,11 @@ int user_sign_edit(int uid)
 		}
 
 		break;
+	}
+
+	if (SYS_server_exit) // Do not save data on shutdown
+	{
+		goto cleanup;
 	}
 
 	db = db_open();
