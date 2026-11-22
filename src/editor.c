@@ -103,8 +103,10 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 	{
 		p_editor_data->display_line_lengths[i] = line_offsets[i + 1] - line_offsets[i];
 
+		// Two bytes of the block stay free, so that splitting this data line at its end has
+		// room for the line feed and the terminator it writes behind the text
 		if (i == 0 ||
-			current_data_line_length + p_editor_data->display_line_lengths[i] + 1 > MAX_EDITOR_DATA_LINE_LENGTH ||
+			current_data_line_length + p_editor_data->display_line_lengths[i] + 2 > MAX_EDITOR_DATA_LINE_LENGTH ||
 			(p_editor_data->display_line_lengths[i - 1] > 0 && p_data[line_offsets[i - 1] + p_editor_data->display_line_lengths[i - 1] - 1] == '\n'))
 		{
 			// Allocate new data line
@@ -199,6 +201,18 @@ void editor_data_cleanup(EDITOR_DATA *p_editor_data)
 		if (p_data_line == NULL)
 		{
 			p_data_line = p_editor_data->p_display_lines[i];
+		}
+
+		// A data line ends either with the line feed of its last display line, or where the
+		// display lines stop pointing into it: a logical line longer than one block is stored
+		// in several of them and every one has to come back to the pool
+		if (i + 1 < p_editor_data->display_line_total &&
+			p_editor_data->p_display_lines[i + 1] != p_editor_data->p_display_lines[i] + p_editor_data->display_line_lengths[i])
+		{
+			memory_pool_free(p_mp_data_line, p_data_line);
+			p_data_line = NULL;
+
+			continue;
 		}
 
 		if (p_editor_data->display_line_lengths[i] > 0 &&
@@ -565,7 +579,9 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			}
 		}
 
-		if (offset_data_line + len_data_line + 1 > MAX_EDITOR_DATA_LINE_LENGTH) // No enough buffer to merge current data line with next data line
+		// The merged data line keeps the same two bytes free that a split of it at the end
+		// needs for its line feed and terminator
+		if (offset_data_line + len_data_line + 2 > MAX_EDITOR_DATA_LINE_LENGTH) // No enough buffer to merge current data line with next data line
 		{
 			return 0;
 		}
