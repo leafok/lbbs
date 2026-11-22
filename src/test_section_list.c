@@ -981,6 +981,105 @@ int main(int argc, char *argv[])
 		printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
 	}
 
+	printf("Testing #7 ...\n");
+
+	// A release nobody holds has to be reported: the loaders pair every lock with an
+	// unlock of the same section, and a refused release is the only sign of a stray one
+	if (section_list_rw_unlock(p_section[0]) == 0)
+	{
+		printf("section_list_rw_unlock(sid = %d) of a free section returned 0\n", p_section[0]->sid);
+		return -7;
+	}
+
+	if (section_list_rd_unlock(p_section[0]) == 0)
+	{
+		printf("section_list_rd_unlock(sid = %d) of a free section returned 0\n", p_section[0]->sid);
+		return -7;
+	}
+
+	// a refused release leaves the semaphore alone, so the section is still lockable
+	if (section_list_rw_lock(p_section[0]) < 0)
+	{
+		printf("section_list_rw_lock(sid = %d) after a refused release error\n", p_section[0]->sid);
+		return -7;
+	}
+
+	// holding it twice is refused rather than silently granted
+	if (section_list_try_rw_lock(p_section[0], 1) == 0)
+	{
+		printf("section_list_try_rw_lock(sid = %d) nested, expectation is timeout\n", p_section[0]->sid);
+		return -7;
+	}
+
+	if (section_list_rw_unlock(p_section[0]) < 0)
+	{
+		printf("section_list_rw_unlock(sid = %d) error\n", p_section[0]->sid);
+		return -7;
+	}
+
+	// the read lock counts readers: two of them are granted, and only the third
+	// release finds nothing left to release
+	if (section_list_rd_lock(p_section[0]) < 0 || section_list_try_rd_lock(p_section[0], 1) < 0)
+	{
+		printf("read lock of section %d error\n", p_section[0]->sid);
+		return -7;
+	}
+
+	if (section_list_rw_unlock(p_section[0]) == 0)
+	{
+		printf("section_list_rw_unlock(sid = %d) over a read lock returned 0\n", p_section[0]->sid);
+		return -7;
+	}
+
+	if (section_list_rd_unlock(p_section[0]) < 0 || section_list_rd_unlock(p_section[0]) < 0)
+	{
+		printf("read release of section %d error\n", p_section[0]->sid);
+		return -7;
+	}
+
+	if (section_list_rd_unlock(p_section[0]) == 0)
+	{
+		printf("section_list_rd_unlock(sid = %d) of a released section returned 0\n", p_section[0]->sid);
+		return -7;
+	}
+
+	// NULL is not "no section", it addresses the global slot every section lock goes
+	// through, so it pairs like any other lock and refuses the same way
+	if (get_section_index(NULL) != BBS_max_section)
+	{
+		printf("get_section_index(NULL) = %d, expected %d\n", get_section_index(NULL), BBS_max_section);
+		return -7;
+	}
+
+	if (section_list_rw_unlock(NULL) == 0)
+	{
+		printf("section_list_rw_unlock(NULL) of a free global slot returned 0\n");
+		return -7;
+	}
+
+	if (section_list_rw_lock(NULL) < 0)
+	{
+		printf("section_list_rw_lock(NULL) error\n");
+		return -7;
+	}
+
+	// the global slot is the one every section read lock waits behind, which is what
+	// makes rw_lock(NULL) enough to walk the whole pool
+	if (section_list_try_rd_lock(p_section[0], 1) == 0)
+	{
+		printf("section_list_try_rd_lock(sid = %d) under the global write lock, expectation is timeout\n",
+			   p_section[0]->sid);
+		return -7;
+	}
+
+	if (section_list_rw_unlock(NULL) < 0)
+	{
+		printf("section_list_rw_unlock(NULL) error\n");
+		return -7;
+	}
+
+	printf("Completed testing #7\n");
+
 	printf("Press ENTER to exit...");
 	getchar();
 
