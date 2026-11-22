@@ -58,7 +58,10 @@ int user_stat_map_update(USER_STAT_MAP *p_map)
 	}
 
 	p_map->user_count += i;
-	p_map->last_uid = uid_list[i - 1];
+	if (i > 0) // No user loaded: keep last_uid, uid_list[-1] is not ours to read
+	{
+		p_map->last_uid = uid_list[i - 1];
+	}
 
 	// Scan articles
 	article_cnt = article_block_article_count();
