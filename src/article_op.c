@@ -217,6 +217,11 @@ int article_excerption_set(SECTION_LIST *p_section, int32_t aid, int8_t set)
 	{
 		log_error("section_list_set_article_excerption(sid=%d, aid=%d, set=%d) error", sid, aid, set);
 		ret = -3;
+
+		if (section_list_rw_unlock(p_section) < 0)
+		{
+			log_error("section_list_rw_unlock(sid=%d) error", sid);
+		}
 		goto cleanup;
 	}
 
@@ -245,6 +250,11 @@ int article_excerption_set(SECTION_LIST *p_section, int32_t aid, int8_t set)
 		{
 			log_error("section_list_set_article_excerption(sid=%d, aid=%d, set=%d) error", sid, aid, excerption);
 			ret = -3;
+
+			if (section_list_rw_unlock(p_section) < 0)
+			{
+				log_error("section_list_rw_unlock(sid=%d) error", sid);
+			}
 			goto cleanup;
 		}
 
