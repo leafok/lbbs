@@ -395,6 +395,10 @@ int user_login_count_load(MYSQL *db)
 	{
 		p_user_list_pool->user_login_count = atoi(row[0]);
 	}
+	else
+	{
+		p_user_list_pool->user_login_count = 0;
+	}
 	mysql_free_result(rs);
 
 	return 0;
