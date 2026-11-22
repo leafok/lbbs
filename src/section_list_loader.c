@@ -284,6 +284,8 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 				log_error("section_list_rw_unlock(sid=%d) error", p_section->sid);
 				break;
 			}
+
+			last_sid = 0; // Nothing is held any more, until the current section is locked below
 		}
 
 		if ((p_section = section_list_find_by_sid(article.sid)) == NULL)
@@ -337,7 +339,7 @@ int append_articles_from_db(int32_t start_aid, int global_lock, int article_coun
 	}
 
 	// release lock of last section
-	if (!global_lock && last_sid != 0)
+	if (!global_lock && p_section != NULL && last_sid != 0)
 	{
 		if ((ret = section_list_rw_unlock(p_section)) < 0)
 		{
@@ -463,6 +465,8 @@ int apply_article_op_log_from_db(int op_count_limit)
 				log_error("section_list_rw_unlock(sid = %d) error", p_section->sid);
 				break;
 			}
+
+			last_sid = 0; // Nothing is held any more, until the current section is locked below
 		}
 
 		if ((p_section = section_list_find_by_sid(p_article->sid)) == NULL)
@@ -651,7 +655,7 @@ int apply_article_op_log_from_db(int op_count_limit)
 	}
 
 	// release lock of last section
-	if (last_sid != 0)
+	if (p_section != NULL && last_sid != 0)
 	{
 		if ((ret = section_list_rw_unlock(p_section)) < 0)
 		{
