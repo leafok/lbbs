@@ -15,6 +15,7 @@
 #include "login.h"
 #include "money.h"
 #include "screen.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -116,8 +117,14 @@ static int load_chicken(void)
 	}
 	fclose(fp);
 
-	age = (ptime.tm_mon + 1 + 12 - month) % 12 * 31 +
+	// The record keeps no birth year, so a negative span can only mean this year's
+	// birthday has not come round yet: the chicken was born in the previous year.
+	age = (ptime.tm_mon + 1 - month) * 31 +
 		  (ptime.tm_mday - day);
+	if (age < 0)
+	{
+		age += 12 * 31;
+	}
 
 	return 0;
 }
@@ -125,10 +132,26 @@ static int load_chicken(void)
 int save_chicken(void)
 {
 	FILE *fp;
+	long len;
 
 	fp = fopen(fname, "r+");
+	if (fp == NULL)
+	{
+		log_error("Error!!cannot open file '%s'!", fname);
+		return -1;
+	}
+
 	fprintf(fp, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %s ",
 			weight, day, month, satis, age, oo, happy, clean, tiredstrong, play, winn, losee, food, zfood, chicken_name);
+	fflush(fp);
+
+	// "r+" keeps the tail of a longer record, so a shorter name must cut it away
+	len = ftell(fp);
+	if (len >= 0 && ftruncate(fileno(fp), (off_t)len) < 0)
+	{
+		log_error("ftruncate(%s) error: %s", fname, strerror(errno));
+	}
+
 	fclose(fp);
 
 	return 0;
@@ -158,6 +181,7 @@ static int create_a_egg(void)
 			}
 			else if (ret > 0)
 			{
+				name_tmp[0] = '\0'; // Never offer the masked text back as the next attempt
 				continue;
 			}
 			strncpy(chicken_name, name_tmp, sizeof(chicken_name) - 1);
