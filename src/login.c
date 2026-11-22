@@ -157,8 +157,8 @@ int check_user(const char *username, const char *password)
 	}
 
 	// Secure SQL parameters
-	mysql_real_escape_string(db, username_f, username, (unsigned long)strnlen(username, sizeof(username)));
-	mysql_real_escape_string(db, password_f, password, (unsigned long)strnlen(password, sizeof(password)));
+	mysql_real_escape_string(db, username_f, username, (unsigned long)strnlen(username, BBS_username_max_len + 1));
+	mysql_real_escape_string(db, password_f, password, (unsigned long)strnlen(password, BBS_password_max_len + 1));
 
 	// Begin transaction
 	if (mysql_query(db, "SET autocommit=0") != 0)
@@ -436,15 +436,15 @@ int load_user_info(MYSQL *db, int BBS_uid)
 	}
 	if ((row = mysql_fetch_row(rs)))
 	{
-		life = atoi(row[0]);
-		last_login_dt = (time_t)atol(row[1]);
+		life = (row[0] == NULL ? 0 : atoi(row[0]));
+		last_login_dt = (row[1] == NULL ? 0 : (time_t)atol(row[1])); // Never signed in
 
-		strncpy(BBS_user_tz, row[2], sizeof(BBS_user_tz) - 1);
+		strncpy(BBS_user_tz, (row[2] == NULL ? "" : row[2]), sizeof(BBS_user_tz) - 1);
 		BBS_user_tz[sizeof(BBS_user_tz) - 1] = '\0';
 
-		BBS_user_exp = atoi(row[3]);
+		BBS_user_exp = (row[3] == NULL ? 0 : atoi(row[3]));
 
-		strncpy(BBS_nickname, row[4], sizeof(BBS_nickname));
+		strncpy(BBS_nickname, (row[4] == NULL ? "" : row[4]), sizeof(BBS_nickname));
 		BBS_nickname[sizeof(BBS_nickname) - 1] = '\0';
 	}
 	else
@@ -455,7 +455,8 @@ int load_user_info(MYSQL *db, int BBS_uid)
 	mysql_free_result(rs);
 	rs = NULL;
 
-	if (life != 333 && life != 365 && life != 666 && life != 999 && // Not immortal
+	if (last_login_dt != 0 && // An account that never signed in cannot have expired
+		life != 333 && life != 365 && life != 666 && life != 999 && // Not immortal
 		time(NULL) - last_login_dt > 60 * 60 * 24 * life)
 	{
 		ret = -3; // Dead
