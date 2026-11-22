@@ -76,6 +76,13 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 		return -1;
 	}
 
+	// A set that still holds a mapping from an earlier load has to give it back first, or the
+	// reset below orphans both the mapping and the shared memory object
+	if (p_menu_set->p_reserved != NULL)
+	{
+		unload_menu(p_menu_set);
+	}
+
 	// Initialize the data structure
 	memset(p_menu_set, 0, sizeof(*p_menu_set));
 
@@ -888,7 +895,7 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 
 		if (trie_dict_get(p_menu_set->p_menu_screen_dict, p_menu->screen_name, (int64_t *)(&(p_menu->screen_id))) != 1)
 		{
-			log_error("Undefined menu screen [%s]", p);
+			log_error("Undefined menu screen [%s]", p_menu->screen_name);
 			return -1;
 		}
 
@@ -1199,6 +1206,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 	MENU_ITEM *p_menu_item;
 	int16_t menu_item_pos;
 	int16_t page_id;
+	int steps;
 	int require_page_change = 0;
 
 	if (p_menu_set->menu_count == 0)
@@ -1253,6 +1261,12 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			{
 				return menu_control(p_menu_set, KEY_LEFT);
 			}
+			if (p_menu_set->choose_step >= MAX_MENU_DEPTH - 1)
+			{
+				// The path arrays keep one entry per level, so this level is the last one
+				log_error("Menu [%s] is nested past %d levels", p_menu->name, MAX_MENU_DEPTH);
+				return NOREDRAW;
+			}
 			p_menu_set->choose_step++;
 			p_menu_set->menu_id_path[p_menu_set->choose_step] = p_menu_item->action_menu_id;
 			p_menu_set->menu_item_pos[p_menu_set->choose_step] = 0;
@@ -1302,6 +1316,14 @@ int menu_control(MENU_SET *p_menu_set, int key)
 					break;
 				}
 			}
+
+			if (menu_item_pos < 0)
+			{
+				// No item of this menu is both public and displayed, and the stored position
+				// has to stay a valid index into the items of the menu
+				menu_item_pos = 0;
+			}
+
 			p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
 			display_menu_cursor(p_menu_set, 1);
 		}
@@ -1310,6 +1332,9 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		require_page_change = 1;
 	case KEY_UP:
 		display_menu_cursor(p_menu_set, 0);
+		// One full turn of the items is enough: a menu with nothing displayed would otherwise
+		// wrap around for ever
+		steps = p_menu->item_count;
 		do
 		{
 			menu_item_pos--;
@@ -1329,7 +1354,11 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			{
 				require_page_change = 0;
 			}
-		} while (require_page_change || !p_menu_set->menu_item_display[menu_item_pos]);
+			if (!require_page_change && p_menu_set->menu_item_display[menu_item_pos])
+			{
+				break;
+			}
+		} while (--steps > 0);
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
 		if (p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
 		{
@@ -1341,6 +1370,9 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		require_page_change = 1;
 	case KEY_DOWN:
 		display_menu_cursor(p_menu_set, 0);
+		// One full turn of the items is enough: a menu with nothing displayed would otherwise
+		// wrap around for ever
+		steps = p_menu->item_count;
 		do
 		{
 			menu_item_pos++;
@@ -1360,7 +1392,11 @@ int menu_control(MENU_SET *p_menu_set, int key)
 			{
 				require_page_change = 0;
 			}
-		} while (require_page_change || !p_menu_set->menu_item_display[menu_item_pos]);
+			if (!require_page_change && p_menu_set->menu_item_display[menu_item_pos])
+			{
+				break;
+			}
+		} while (--steps > 0);
 		p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;
 		if (p_menu_set->menu_item_page_id[menu_item_pos] != page_id)
 		{
@@ -1423,7 +1459,9 @@ int menu_control(MENU_SET *p_menu_set, int key)
 		display_menu_cursor(p_menu_set, 1);
 		break;
 	default:
-		if (isalnum(key))
+		// A hot key is one printable ASCII character, and the extended key codes are far past
+		// the range the ctype tables cover
+		if (key >= 32 && key <= 126 && isalnum(key))
 		{
 			for (menu_item_pos = 0; menu_item_pos < p_menu->item_count; menu_item_pos++)
 			{
@@ -1435,7 +1473,7 @@ int menu_control(MENU_SET *p_menu_set, int key)
 					return -1;
 				}
 
-				if (toupper(key) == toupper(p_menu_item->name[0]) && p_menu_set->menu_item_display[menu_item_pos])
+				if (toupper(key) == toupper((unsigned char) p_menu_item->name[0]) && p_menu_set->menu_item_display[menu_item_pos])
 				{
 					display_menu_cursor(p_menu_set, 0);
 					p_menu_set->menu_item_pos[p_menu_set->choose_step] = menu_item_pos;

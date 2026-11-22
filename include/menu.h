@@ -119,23 +119,28 @@ extern int display_menu_cursor(MENU_SET *p_menu_set, int show);
 extern int menu_control(MENU_SET *p_menu_set, int key);
 extern int display_menu(MENU_SET *p_menu_set);
 
-inline MENU *get_menu(MENU_SET *p_menu_set, const char *menu_name)
-{
-	MENU *value = NULL;
-
-	trie_dict_get(p_menu_set->p_menu_name_dict, menu_name, (int64_t *)&value);
-
-	return ((MENU *)value);
-}
-
+// The menu name dictionary holds the id of the menu, so the id has to go through the pool
+// before it is a MENU pointer
 inline MENU *get_menu_by_id(MENU_SET *p_menu_set, MENU_ID menu_id)
 {
-	if (menu_id < 0 || menu_id >= p_menu_set->menu_count)
+	if (p_menu_set->menu_count <= 0 || menu_id >= (uint64_t) p_menu_set->menu_count)
 	{
 		return NULL;
 	}
 
-	return (MENU *)((char *)(p_menu_set->p_menu_pool) + sizeof(MENU) * menu_id);
+	return (MENU *)((char *)(p_menu_set->p_menu_pool) + sizeof(MENU) * (size_t)menu_id);
+}
+
+inline MENU *get_menu(MENU_SET *p_menu_set, const char *menu_name)
+{
+	int64_t menu_id = -1;
+
+	if (trie_dict_get(p_menu_set->p_menu_name_dict, menu_name, &menu_id) != 1)
+	{
+		return NULL;
+	}
+
+	return get_menu_by_id(p_menu_set, (MENU_ID)menu_id);
 }
 
 inline MENU_ITEM *get_menu_item_by_id(MENU_SET *p_menu_set, MENU_ITEM_ID menu_item_id)
