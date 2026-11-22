@@ -279,7 +279,8 @@ int article_cache_load(ARTICLE_CACHE *p_cache, const char *cache_dir, const ARTI
 
 	if (((ARTICLE_CACHE *)p_mmap)->mmap_len != mmap_len)
 	{
-		log_error("Inconsistent mmap len of article (cid=%d), %ld != %ld", p_article->cid, p_cache->mmap_len, mmap_len);
+		log_error("Inconsistent mmap len of article (cid=%d), %ld != %ld", p_article->cid,
+				  ((ARTICLE_CACHE *)p_mmap)->mmap_len, mmap_len);
 		munmap(p_mmap, mmap_len);
 		return -3;
 	}
