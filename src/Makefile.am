@@ -3,7 +3,8 @@ bin_PROGRAMS = bbsd
 # test_ssh_server binds a port and loops forever, so it is built but never run by check
 unit_TESTS = test_trie_dict test_file_loader test_section_list test_lml test_article_favor test_article_view_log \
 			 test_memory_pool test_bbs test_bwf test_hash_dict test_ip_mask test_user_priv test_str_process \
-			 test_user_stat test_menu test_editor test_article_cache test_common test_bbs_cmd test_init test_io test_log
+			 test_user_stat test_menu test_editor test_article_cache test_common test_bbs_cmd test_init test_io test_log \
+			 test_section_list_loader
 
 TESTS = $(unit_TESTS)
 test_PROGRAMS = $(unit_TESTS) test_ssh_server
@@ -50,6 +51,7 @@ test_bbs_cmd_SOURCES = bbs_cmd.c common.c log.c test_bbs_cmd.c trie_dict.c
 test_init_SOURCES = init.c log.c test_init.c
 test_io_SOURCES = common.c io.c log.c test_io.c
 test_log_SOURCES = log.c test_log.c
+test_section_list_loader_SOURCES = article_cache.c bbs.c common.c database.c ip_mask.c log.c lml.c section_list.c section_list_loader.c str_process.c test_section_list_loader.c trie_dict.c user_list.c user_priv.c user_stat.c
 
 AM_CFLAGS = -I${srcdir}/../include -I${srcdir}/../utils/game ${LIBSSH_CFLAGS} ${MYSQLCLIENT_CFLAGS} ${SYSTEMD_CFLAGS} ${LIBPCRE2_CFLAGS} ${ICONV_CFLAGS} \
 			-std=c17 -Wall -Werror -Wformat -Wpedantic -Wformat-security -Wconversion \
