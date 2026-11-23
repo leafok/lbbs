@@ -31,6 +31,8 @@ typedef struct _bbs_cmd BBS_CMD;
 
 extern int load_cmd(void);
 
+extern void unload_cmd(void);
+
 extern bbs_cmd_handler get_cmd_handler(const char *cmd);
 
 #endif //_BBS_CMD_H_
