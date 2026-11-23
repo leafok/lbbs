@@ -2,6 +2,10 @@
 
 The Chinese version of this changelog is available at [ChangeLog.zh_CN.md](ChangeLog.zh_CN.md).
 
+## 2026-11-23 v1.8
+
+Fix some bugs
+
 ## 2025-12-26 v1.7
 
 ### Major Features Added
