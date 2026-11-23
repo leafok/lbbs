@@ -1758,6 +1758,186 @@ static void test_display_line_limit(void)
 	printf("Completed testing #9: %d of %d checks passed\n", check_count - failed_count, check_count);
 }
 
+// editor_data_load() splits a document at the whole screen width, but once the model holds all
+// MAX_EDITOR_DATA_LINES display lines editor_data_insert() splits the last one at one column
+// short of it: a line feed is worth a column of the line it ends, and the next display line has
+// to start inside the screen. The two do not agree, and a keystroke that shows the difference
+// is answered with a return of 0.
+static void test_last_line_reserve(void)
+{
+	static char text[MAX_EDITOR_DATA_LINES + SCREEN_COLS + 2];
+	static char expect[MAX_EDITOR_DATA_LINES + SCREEN_COLS + 2];
+	char cut[SCREEN_COLS + 2];
+	EDITOR_DATA *p_ed;
+	long display_line;
+	long offset;
+	long last_updated;
+	long i;
+	long ret;
+
+	printf("Testing #10 ...\n");
+
+	fill_chars(cut, (size_t)SCREEN_COLS - 1, 'x');
+
+	// 65535 breaks and one line of 80 characters: the model is full and its last display line
+	// still fills the screen, since loading counts the break as the end of a line and not as a
+	// column of the one behind it
+	for (i = 0; i < MAX_EDITOR_DATA_LINES - 1; i++)
+	{
+		text[i] = '\n';
+	}
+
+	fill_chars(text + MAX_EDITOR_DATA_LINES - 1, (size_t)SCREEN_COLS, 'x');
+	p_ed = editor_data_load(text);
+	check_true(p_ed != NULL, "editor_data_load() of a screen wide last line");
+
+	if (p_ed == NULL)
+	{
+		printf("Completed testing #10: %d of %d checks passed\n", check_count - failed_count, check_count);
+
+		return;
+	}
+
+	check_int(dl_total(p_ed), MAX_EDITOR_DATA_LINES, "the model of a screen wide last line is full");
+	check_int(dl_len(p_ed, MAX_EDITOR_DATA_LINES - 1), SCREEN_COLS,
+			"editor_data_load() keeps every column of the screen wide last line");
+	check_int(dl_width(p_ed, MAX_EDITOR_DATA_LINES - 1), SCREEN_COLS,
+			"the screen wide last line is measured at the screen width");
+	check_model(p_ed, "the model of a screen wide last line");
+	check_str(save_joined(p_ed, "the round trip of a screen wide last line"), text,
+			"a screen wide last line saves as it loaded");
+
+	// The first keystroke anywhere in the file would need one display line more than the model
+	// has, and with none left to take the overflow the guard ends the document at the column
+	// that still fits: the 80th character is dropped from a line that was never touched
+	display_line = 0;
+	offset = 0;
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "y", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() into the first line of the full model");
+	check_int(dl_len(p_ed, MAX_EDITOR_DATA_LINES - 1), SCREEN_COLS - 1,
+			"an edit at the top cuts the last display line one column short");
+	check_int(dl_width(p_ed, MAX_EDITOR_DATA_LINES - 1), SCREEN_COLS - 1,
+			"the cut last display line is one column short of the screen");
+	check_str(dl_text(p_ed, MAX_EDITOR_DATA_LINES - 1), cut, "the character lost is the last one of the document");
+	check_model(p_ed, "the full model after an edit at the top");
+
+	expect[0] = 'y';
+
+	for (i = 0; i < MAX_EDITOR_DATA_LINES - 1; i++)
+	{
+		expect[1 + i] = '\n';
+	}
+
+	fill_chars(expect + MAX_EDITOR_DATA_LINES, (size_t)SCREEN_COLS - 1, 'x');
+	check_str(save_joined(p_ed, "the round trip after the cut last display line"), expect,
+			"the lost column is gone from the saved document too");
+	editor_data_cleanup(p_ed);
+
+	// Reloaded, a keystroke at the screen edge of the last line of the full model is cut back the
+	// same way, and the cursor that asked for the 80th column is pulled to the 79th
+	p_ed = editor_data_load(text);
+	check_true(p_ed != NULL, "editor_data_load() again of a screen wide last line");
+
+	if (p_ed == NULL)
+	{
+		printf("Completed testing #10: %d of %d checks passed\n", check_count - failed_count, check_count);
+
+		return;
+	}
+
+	display_line = MAX_EDITOR_DATA_LINES - 1;
+	offset = SCREEN_COLS;
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "y", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() at the screen edge of the last line of the full model");
+	check_int(offset, SCREEN_COLS - 1, "the cursor of the dropped character is pulled back one column");
+	check_int(display_line, MAX_EDITOR_DATA_LINES - 1, "the dropped character stays on the last display line");
+	check_int(dl_len(p_ed, MAX_EDITOR_DATA_LINES - 1), SCREEN_COLS - 1,
+			"the typed character is not in the last display line");
+	check_str(dl_text(p_ed, MAX_EDITOR_DATA_LINES - 1), cut,
+			"the keystroke at the screen edge costs the document its last character");
+
+	// One more keystroke at the reserve column is refused in the same silent way: the width the
+	// last display line can hold is 79 columns, not 80 minus one character of slack
+	display_line = MAX_EDITOR_DATA_LINES - 1;
+	offset = SCREEN_COLS - 1;
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "z", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() into the reserve column of the last line");
+	check_int(offset, SCREEN_COLS - 1, "the cursor does not move into the reserve column");
+	check_int(dl_len(p_ed, MAX_EDITOR_DATA_LINES - 1), SCREEN_COLS - 1, "the reserve column takes no character");
+	check_str(dl_text(p_ed, MAX_EDITOR_DATA_LINES - 1), cut, "the reserve column keeps the character it had");
+	check_model(p_ed, "the full model after the keystrokes at its edge");
+	editor_data_cleanup(p_ed);
+
+	// One display line short of the model the overflow has somewhere to go, so the same
+	// document keeps its 80th column and the same keystroke wraps onto the free display line
+	for (i = 0; i < MAX_EDITOR_DATA_LINES - 2; i++)
+	{
+		text[i] = '\n';
+	}
+
+	fill_chars(text + MAX_EDITOR_DATA_LINES - 2, (size_t)SCREEN_COLS, 'x');
+	p_ed = editor_data_load(text);
+	check_true(p_ed != NULL, "editor_data_load() one display line short of the model");
+
+	if (p_ed == NULL)
+	{
+		printf("Completed testing #10: %d of %d checks passed\n", check_count - failed_count, check_count);
+
+		return;
+	}
+
+	check_int(dl_total(p_ed), MAX_EDITOR_DATA_LINES - 1, "one display line of the model is left free");
+	check_int(dl_len(p_ed, MAX_EDITOR_DATA_LINES - 2), SCREEN_COLS,
+			"the short model keeps its screen wide last line");
+	check_model(p_ed, "the model one display line short");
+	check_str(save_joined(p_ed, "the round trip one display line short"), text,
+			"the short document saves as it loaded");
+
+	display_line = 0;
+	offset = 0;
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "y", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() into the first line of the short model");
+	check_int(dl_len(p_ed, MAX_EDITOR_DATA_LINES - 2), SCREEN_COLS,
+			"an edit at the top costs the short model no column");
+	check_model(p_ed, "the short model after an edit at the top");
+
+	// Typing at the screen edge of a line that is not the last of a full model grows the
+	// logical line and re-wraps it, so the character lands on a display line of its own without
+	// a break of its own: the 80 columns stay one line and the document keeps all of them
+	display_line = MAX_EDITOR_DATA_LINES - 2;
+	offset = SCREEN_COLS;
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "w", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() at the screen edge of the last line of the short model");
+	check_int(dl_total(p_ed), MAX_EDITOR_DATA_LINES, "the wrap takes the display line that was free");
+	check_int(dl_len(p_ed, MAX_EDITOR_DATA_LINES - 2), SCREEN_COLS,
+			"the wrapped line keeps its 80 columns and ends on the screen edge");
+	check_int(dl_width(p_ed, MAX_EDITOR_DATA_LINES - 2), SCREEN_COLS,
+			"the wrapped line is measured at the screen width");
+	check_str(dl_text(p_ed, MAX_EDITOR_DATA_LINES - 1), "w", "the typed character is on the new display line");
+	check_model(p_ed, "the model after the wrap of the short document");
+
+	expect[0] = 'y';
+
+	for (i = 0; i < MAX_EDITOR_DATA_LINES - 2; i++)
+	{
+		expect[1 + i] = '\n';
+	}
+
+	fill_chars(expect + MAX_EDITOR_DATA_LINES - 1, (size_t)SCREEN_COLS, 'x');
+	expect[MAX_EDITOR_DATA_LINES - 1 + SCREEN_COLS] = 'w';
+	expect[MAX_EDITOR_DATA_LINES + SCREEN_COLS] = '\0';
+	check_str(save_joined(p_ed, "the round trip of the wrapped short document"), expect,
+			"the wrap keeps every character of the document");
+	editor_data_cleanup(p_ed);
+
+	printf("Completed testing #10: %d of %d checks passed\n", check_count - failed_count, check_count);
+}
+
 static void test_display_typing(void)
 {
 	char text[MAX_EDITOR_DATA_LINE_LENGTH * 2];
@@ -1765,7 +1945,7 @@ static void test_display_typing(void)
 	EDITOR_DATA *p_ed;
 	int ret;
 
-	printf("Testing #10 ...\n");
+	printf("Testing #11 ...\n");
 
 	// Typing is one batch of keys between two status lines, so the cursor the editor leaves
 	// behind only shows up in the moveto of the next status line. Key 0 asks for that line
@@ -2044,7 +2224,7 @@ static void test_display_typing(void)
 			"nothing is typed while the server exits");
 	editor_data_cleanup(p_ed);
 
-	printf("Completed testing #10: %d of %d checks passed\n", check_count - failed_count, check_count);
+	printf("Completed testing #11: %d of %d checks passed\n", check_count - failed_count, check_count);
 }
 
 static void test_display_navigation(void)
@@ -2055,7 +2235,7 @@ static void test_display_navigation(void)
 	long i;
 	int ret;
 
-	printf("Testing #11 ...\n");
+	printf("Testing #12 ...\n");
 
 	// A document taller than the screen, which the editor scrolls as the cursor moves
 	p_pos = text;
@@ -2255,7 +2435,7 @@ static void test_display_navigation(void)
 	restore_fixed_width();
 	editor_data_cleanup(p_ed);
 
-	printf("Completed testing #11: %d of %d checks passed\n", check_count - failed_count, check_count);
+	printf("Completed testing #12: %d of %d checks passed\n", check_count - failed_count, check_count);
 }
 
 int main(void)
@@ -2278,6 +2458,7 @@ int main(void)
 	test_data_line_capacity();
 	test_delete();
 	test_display_line_limit();
+	test_last_line_reserve();
 	test_display_typing();
 	test_display_navigation();
 
