@@ -2674,6 +2674,164 @@ static void test_data_line_blocks(void)
 	printf("Completed testing #13: %d of %d checks passed\n", check_count - failed_count, check_count);
 }
 
+// The reserve-column guard walks by whole codepoints, so a wide character that cannot fit into
+// the cut costs three bytes and two columns and the document loses it on the next save. This
+// is the article #472407 shape: '车' sits at columns 78-79 of the last display line and the
+// first keystroke anywhere in the file drops it.
+static void test_last_line_reserve_wide(void)
+{
+	static char text[MAX_EDITOR_DATA_LINES + SCREEN_COLS * 3 + 8];
+	static const char car[] = "\xe8\xbd\xa6"; // 车 U+8F66: 3 bytes, 2 columns
+	const char *p_saved;
+	EDITOR_DATA *p_ed;
+	long display_line;
+	long offset;
+	long last_updated;
+	long last;
+	long ret;
+
+	printf("Testing #14 ...\n");
+
+	// (a) Wide character at the screen edge, no ASCII behind it: cut drops it whole
+	memset(text, (int)'\n', (size_t)MAX_EDITOR_DATA_LINES - 1);
+	fill_chars(text + MAX_EDITOR_DATA_LINES - 1, (size_t)SCREEN_COLS - 2, 'a');
+	memcpy(text + (MAX_EDITOR_DATA_LINES - 1) + (SCREEN_COLS - 2), car, 3);
+	text[(MAX_EDITOR_DATA_LINES - 1) + SCREEN_COLS + 1] = '\0';
+	p_ed = editor_data_load(text);
+	check_true(p_ed != NULL, "editor_data_load() of a wide tail at the model's limit");
+
+	if (p_ed == NULL)
+	{
+		printf("Completed testing #14: %d of %d checks passed\n", check_count - failed_count, check_count);
+
+		return;
+	}
+
+	last = dl_total(p_ed) - 1;
+	check_int(dl_total(p_ed), MAX_EDITOR_DATA_LINES, "a wide tail at the screen edge fills the model");
+	check_int(dl_len(p_ed, last), SCREEN_COLS + 1,
+			"a wide tail takes three bytes for the last two columns");
+	check_int(dl_width(p_ed, last), SCREEN_COLS, "the wide tail reaches the screen width");
+	p_saved = save_joined(p_ed, "the round trip of a wide tail at the screen edge");
+	check_true(strstr(p_saved, car) != NULL,
+			"the loaded wide tail is in the saved document");
+	check_model(p_ed, "the model of a wide tail at the screen edge");
+
+	display_line = 0;
+	offset = 0;
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "x", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() at the top of the wide-tail model");
+	check_int(dl_len(p_ed, last), SCREEN_COLS - 2,
+			"the reserve cut drops the whole wide character, not one byte of it");
+	check_int(dl_width(p_ed, last), SCREEN_COLS - 2,
+			"the cut costs two columns when the last character is two wide");
+	check_true(strstr(dl_text(p_ed, last), car) == NULL,
+			"the last display line no longer holds the wide character");
+	check_model(p_ed, "the wide-tail model after the reserve cut");
+	p_saved = save_joined(p_ed, "the round trip after the wide tail is cut");
+	check_true(strstr(p_saved, car) == NULL,
+			"the wide character is gone from the saved document too");
+	editor_data_cleanup(p_ed);
+
+	// Reload the truncated save: the character stays gone, since the document itself lost it
+	p_ed = editor_data_load(p_saved);
+	check_true(p_ed != NULL, "editor_data_load() of the truncated wide-tail document");
+
+	if (p_ed == NULL)
+	{
+		printf("Completed testing #14: %d of %d checks passed\n", check_count - failed_count, check_count);
+
+		return;
+	}
+
+	last = dl_total(p_ed) - 1;
+	check_true(strstr(dl_text(p_ed, last), car) == NULL,
+			"the reloaded last display line is still missing the wide character");
+	check_model(p_ed, "the reloaded truncated wide-tail document");
+	editor_data_cleanup(p_ed);
+
+	// (b) Wide character in the middle of the last display line, ASCII after it: the cut
+	// reaches the wide character (fits inside SCREEN_COLS - 1), only the trailing ASCII is lost
+	memset(text, (int)'\n', (size_t)MAX_EDITOR_DATA_LINES - 1);
+	fill_chars(text + MAX_EDITOR_DATA_LINES - 1, (size_t)SCREEN_COLS - 3, 'a');
+	memcpy(text + (MAX_EDITOR_DATA_LINES - 1) + (SCREEN_COLS - 3), car, 3);
+	text[(MAX_EDITOR_DATA_LINES - 1) + SCREEN_COLS] = 'z';
+	text[(MAX_EDITOR_DATA_LINES - 1) + SCREEN_COLS + 1] = '\0';
+	p_ed = editor_data_load(text);
+	check_true(p_ed != NULL, "editor_data_load() of an interior wide character at the model's limit");
+
+	if (p_ed == NULL)
+	{
+		printf("Completed testing #14: %d of %d checks passed\n", check_count - failed_count, check_count);
+
+		return;
+	}
+
+	last = dl_total(p_ed) - 1;
+	check_int(dl_len(p_ed, last), SCREEN_COLS + 1,
+			"an interior wide character plus its ASCII tail takes three bytes over the last column");
+	check_int(dl_width(p_ed, last), SCREEN_COLS,
+			"the interior wide character reaches the screen width with its ASCII tail");
+
+	display_line = 0;
+	offset = 0;
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "y", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() at the top of the interior-wide model");
+	check_int(dl_len(p_ed, last), SCREEN_COLS,
+			"the cut preserves the wide character and drops the ASCII tail");
+	check_int(dl_width(p_ed, last), SCREEN_COLS - 1,
+			"the cut costs one column when the last character is one wide");
+	check_true(strstr(dl_text(p_ed, last), car) != NULL,
+			"the interior wide character survives the reserve cut");
+	// The dl ends on the last continuation byte of the wide character, and the head is three
+	// bytes back: no UTF-8 sequence is left dangling across the boundary
+	check_true(dl_text(p_ed, last)[dl_len(p_ed, last) - 1] == (char)0xa6,
+			"the dl ends on a continuation byte, not mid-codepoint");
+	check_true(dl_text(p_ed, last)[dl_len(p_ed, last) - 3] == (char)0xe8,
+			"the wide character begins three bytes from the end of the dl");
+	check_model(p_ed, "the interior-wide model after the reserve cut");
+	editor_data_cleanup(p_ed);
+
+	// (c) Two wide characters at the tail: cut keeps the first, drops the second whole. Proves
+	// the walk stops on the codepoint boundary and never splits one
+	memset(text, (int)'\n', (size_t)MAX_EDITOR_DATA_LINES - 1);
+	fill_chars(text + MAX_EDITOR_DATA_LINES - 1, (size_t)SCREEN_COLS - 4, 'a');
+	memcpy(text + (MAX_EDITOR_DATA_LINES - 1) + (SCREEN_COLS - 4), car, 3);
+	memcpy(text + (MAX_EDITOR_DATA_LINES - 1) + (SCREEN_COLS - 1), car, 3);
+	text[(MAX_EDITOR_DATA_LINES - 1) + SCREEN_COLS + 2] = '\0';
+	p_ed = editor_data_load(text);
+	check_true(p_ed != NULL, "editor_data_load() of two wide characters at the model's limit");
+
+	if (p_ed == NULL)
+	{
+		printf("Completed testing #14: %d of %d checks passed\n", check_count - failed_count, check_count);
+
+		return;
+	}
+
+	last = dl_total(p_ed) - 1;
+	check_int(dl_len(p_ed, last), SCREEN_COLS + 2,
+			"two wide characters take six bytes for the last four columns");
+	check_int(dl_width(p_ed, last), SCREEN_COLS,
+			"the two wide characters together reach the screen width");
+
+	display_line = 0;
+	offset = 0;
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "q", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() at the top of the double-wide model");
+	check_int(dl_len(p_ed, last), SCREEN_COLS - 1,
+			"the cut stops on the codepoint boundary between the two wide characters");
+	check_int(dl_width(p_ed, last), SCREEN_COLS - 2,
+			"the cut keeps the first wide character and drops the second whole");
+	check_model(p_ed, "the double-wide model after the reserve cut");
+	editor_data_cleanup(p_ed);
+
+	printf("Completed testing #14: %d of %d checks passed\n", check_count - failed_count, check_count);
+}
+
 int main(void)
 {
 	if (log_begin("../log/test_editor.log", "../log/test_editor_error.log") < 0)
@@ -2703,6 +2861,7 @@ int main(void)
 	test_display_typing();
 	test_display_navigation();
 	test_data_line_blocks();
+	test_last_line_reserve_wide();
 
 	// Every document of the suite is closed above, so this releases the pools themselves and
 	// LeakSanitizer only has the log files left to complain about
