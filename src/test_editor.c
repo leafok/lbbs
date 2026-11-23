@@ -1309,6 +1309,8 @@ static void test_data_line_capacity(void)
 	for (i = 1; i <= 4; i++)
 	{
 		size_t pos = 0;
+		size_t split_len = 0;
+		static char split[(MAX_EDITOR_DATA_LINE_LENGTH + 2) * 4 + 8];
 		int j;
 
 		for (j = 0; j < i; j++)
@@ -1319,6 +1321,25 @@ static void test_data_line_capacity(void)
 		}
 
 		text[pos] = '\0';
+
+		// The load terminates every block that an over-long closed line spills into, so
+		// the round trip reads back each source line as its first twelve display lines
+		// (SCREEN_COLS * 12 = 960 bytes) plus a line feed the load injected, plus the tail
+		// of the source line (its own '\n'-terminated remainder).
+		for (j = 0; j < i; j++)
+		{
+			const size_t line_len = (size_t)MAX_EDITOR_DATA_LINE_LENGTH + 2;
+			const size_t split_at = (size_t)SCREEN_COLS * 12;
+			size_t base = (size_t)j * line_len;
+
+			memcpy(split + split_len, text + base, split_at);
+			split_len += split_at;
+			split[split_len++] = '\n';
+			memcpy(split + split_len, text + base + split_at, line_len - split_at);
+			split_len += line_len - split_at;
+		}
+		split[split_len] = '\0';
+
 		p_ed = editor_data_load(text);
 
 		if (p_ed == NULL)
@@ -1328,7 +1349,7 @@ static void test_data_line_capacity(void)
 			continue;
 		}
 
-		check_str(save_joined(p_ed, "the round trip of the multi line capacity text"), text,
+		check_str(save_joined(p_ed, "the round trip of the multi line capacity text"), split,
 				"the round trip of the multi line capacity text");
 		check_int(data_lines(p_ed), i * 2 + 1, "every over-long line of the capacity text takes two data lines");
 		check_model(p_ed, "the multi line capacity text");
@@ -1338,7 +1359,7 @@ static void test_data_line_capacity(void)
 		last_updated = 0;
 		ret = editor_data_insert(p_ed, &display_line, &offset, "tail", 4, &last_updated);
 		check_int(ret, 0, "editor_data_insert() at the end of the multi line capacity text");
-		snprintf(expect, sizeof(expect), "%stail", text);
+		snprintf(expect, sizeof(expect), "%stail", split);
 		check_str(save_joined(p_ed, "the round trip after typing at the end of the multi line capacity text"),
 				expect, "the round trip after typing at the end of the multi line capacity text");
 		check_model(p_ed, "after typing at the end of the multi line capacity text");
@@ -1348,7 +1369,7 @@ static void test_data_line_capacity(void)
 		last_updated = 0;
 		ret = editor_data_insert(p_ed, &display_line, &offset, "\r", 1, &last_updated);
 		check_int(ret, 0, "editor_data_insert() of a break at the end of the multi line capacity text");
-		snprintf(expect, sizeof(expect), "%stail\n", text);
+		snprintf(expect, sizeof(expect), "%stail\n", split);
 		check_str(save_joined(p_ed, "the round trip after the break at the end of the multi line capacity text"),
 				expect, "the round trip after the break at the end of the multi line capacity text");
 		check_model(p_ed, "after the break at the end of the multi line capacity text");
@@ -2476,7 +2497,7 @@ static void test_data_line_blocks(void)
 {
 	static char text[MAX_EDITOR_DATA_LINE_LENGTH * 2 + 8];
 	static char want[MAX_EDITOR_DATA_LINE_LENGTH * 2 + 24];
-	static char expect[MAX_EDITOR_DATA_LINE_LENGTH * 2 + 24];
+	static char expect[MAX_EDITOR_DATA_LINE_LENGTH * 2 + 40];
 	const char *p_saved;
 	EDITOR_DATA *p_ed;
 	long display_line;
@@ -2499,12 +2520,32 @@ static void test_data_line_blocks(void)
 	check_int(data_lines(p_ed), 4, "a logical line over one block takes a data line per block");
 	check_model(p_ed, "the logical line over one block");
 
+	// The load terminates each block that the closed over-long line spills into: the
+	// 2001-byte source line (2000 'a's + '\n') fits into three blocks, and the two full
+	// blocks (SCREEN_COLS * 12 = 960 bytes each) each gain a line feed at their end.
+	{
+		const size_t split_at = (size_t)SCREEN_COLS * 12;
+		const size_t closed_len = 2001;
+		size_t w = 0;
+		size_t src = 0;
+		while (src + split_at < closed_len)
+		{
+			memcpy(want + w, text + src, split_at);
+			w += split_at;
+			want[w++] = '\n';
+			src += split_at;
+		}
+		memcpy(want + w, text + src, (size_t)strlen(text) - src);
+		w += (size_t)strlen(text) - src;
+		want[w] = '\0';
+	}
+
 	display_line = 1;
 	offset = 10;
 	last_updated = 0;
 	ret = editor_data_insert(p_ed, &display_line, &offset, "x", 1, &last_updated);
 	check_int(ret, 0, "editor_data_insert() inside a logical line over one block");
-	splice_text(expect, sizeof(expect), text, 90, "x");
+	splice_text(expect, sizeof(expect), want, 90, "x");
 	check_str(save_joined(p_ed, "the text typed inside a logical line over one block"), expect,
 			"typing inside a logical line over one block only adds the character");
 	check_int(display_line, 1, "the cursor stays on the display line it typed into");
@@ -2514,8 +2555,14 @@ static void test_data_line_blocks(void)
 	editor_data_cleanup(p_ed);
 
 	// The character at the end of a block belongs to the block behind it, and so does the
-	// display line the cursor has to move to for the delete that takes it
+	// display line the cursor has to move to for the delete that takes it. The line is left
+	// unclosed here on purpose: a closed line spills a terminator into the block boundary
+	// at load time, and the boundary character then stops belonging to either block.
+	memset(text, (int)'a', 2000);
+	text[2000] = '\0';
 	p_ed = editor_data_load(text);
+	check_true(p_ed != NULL, "editor_data_load() of an unclosed logical line over one block");
+	check_int(data_lines(p_ed), 3, "an unclosed logical line over one block keeps a byte-free boundary in each block");
 	end_line = data_line_end(p_ed, 1);
 	display_line = end_line;
 	offset = dl_len(p_ed, end_line);
@@ -2524,7 +2571,7 @@ static void test_data_line_blocks(void)
 	check_int(ret, 1, "editor_data_delete() at the end of a data block");
 	check_int(display_line, end_line + 1, "the cursor moves to the block the character came from");
 	check_int(offset, 0, "the cursor sits at the start of that block");
-	snprintf(expect, sizeof(expect), "%.*s%s", 960, text, text + 961);
+	snprintf(expect, sizeof(expect), "%.*s%s", (int)(SCREEN_COLS * 12), text, text + SCREEN_COLS * 12 + 1);
 	check_str(save_joined(p_ed, "the text after deleting at the end of a data block"), expect,
 			"deleting at the end of a data block takes the first character of the next one");
 	check_model(p_ed, "deleting at the end of a data block");

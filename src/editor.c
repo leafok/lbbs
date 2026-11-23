@@ -80,6 +80,7 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 	char *p_data_line = NULL;
 	long line_offsets[MAX_EDITOR_DATA_LINES + 1];
 	long current_data_line_length = 0;
+	long last_lf_dl;
 	long i;
 	int j;
 
@@ -99,6 +100,19 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 	p_editor_data->display_line_total = split_data_lines(p_data, SCREEN_COLS, line_offsets, MAX_EDITOR_DATA_LINES + 1,
 														 0, p_editor_data->display_line_widths);
 
+	// The last display line whose source content ends in a line feed marks the end of the
+	// last closed logical line. Any display line past it belongs to an unclosed tail, whose
+	// block boundary must not gain a line feed it did not come with.
+	last_lf_dl = -1;
+
+	for (i = 0; i < p_editor_data->display_line_total; i++)
+	{
+		if (line_offsets[i + 1] > line_offsets[i] && p_data[line_offsets[i + 1] - 1] == '\n')
+		{
+			last_lf_dl = i;
+		}
+	}
+
 	for (i = 0; i < p_editor_data->display_line_total; i++)
 	{
 		p_editor_data->display_line_lengths[i] = line_offsets[i + 1] - line_offsets[i];
@@ -107,8 +121,21 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 		// room for the line feed and the terminator it writes behind the text
 		if (i == 0 ||
 			current_data_line_length + p_editor_data->display_line_lengths[i] + 2 > MAX_EDITOR_DATA_LINE_LENGTH ||
-			(p_editor_data->display_line_lengths[i - 1] > 0 && p_data[line_offsets[i - 1] + p_editor_data->display_line_lengths[i - 1] - 1] == '\n'))
+			(p_editor_data->display_line_lengths[i - 1] > 0 && p_editor_data->p_display_lines[i - 1][p_editor_data->display_line_lengths[i - 1] - 1] == '\n'))
 		{
+			if (i > 0 &&
+				current_data_line_length + p_editor_data->display_line_lengths[i] + 2 > MAX_EDITOR_DATA_LINE_LENGTH &&
+				p_editor_data->display_line_lengths[i - 1] > 0 &&
+				p_editor_data->p_display_lines[i - 1][p_editor_data->display_line_lengths[i - 1] - 1] != '\n' &&
+				i <= last_lf_dl)
+			{
+				// Add line ending to prior display line (data line)
+				p_editor_data->p_display_lines[i - 1][p_editor_data->display_line_lengths[i - 1]] = '\n';
+				p_editor_data->display_line_lengths[i - 1]++;
+				p_editor_data->display_line_widths[i - 1]++;
+				p_editor_data->p_display_lines[i - 1][p_editor_data->display_line_lengths[i - 1]] = '\0';
+			}
+
 			// Allocate new data line
 			p_data_line = memory_pool_alloc(p_mp_data_line);
 			if (p_data_line == NULL)
