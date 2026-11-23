@@ -114,7 +114,8 @@ EDITOR_DATA *editor_data_load(const char *p_data)
 			if (p_data_line == NULL)
 			{
 				log_error("memory_pool_alloc() error: i = %ld", i);
-				// Cleanup
+				// Cleanup the data lines that this loop has filled in, and only those
+				p_editor_data->display_line_total = i;
 				editor_data_cleanup(p_editor_data);
 				return NULL;
 			}
@@ -231,6 +232,36 @@ void editor_data_cleanup(EDITOR_DATA *p_editor_data)
 	memory_pool_free(p_mp_editor_data, p_editor_data);
 }
 
+// A data line is one block of MAX_EDITOR_DATA_LINE_LENGTH bytes, and a logical line longer
+// than that is stored in several of them, so it ends where the text reaches a line feed and
+// where the display line behind it does not continue in the same block.
+static int is_data_line_end(const EDITOR_DATA *p_editor_data, long i)
+{
+	char *p_display_line = p_editor_data->p_display_lines[i];
+	long len = p_editor_data->display_line_lengths[i];
+
+	if (p_display_line == NULL || len < 0)
+	{
+		return 1;
+	}
+
+	if (len > 0 && p_display_line[len - 1] == '\n')
+	{
+		return 1;
+	}
+
+	return i + 1 >= p_editor_data->display_line_total ||
+		   p_editor_data->p_display_lines[i + 1] != p_display_line + len;
+}
+
+static int is_line_feed_end(const EDITOR_DATA *p_editor_data, long i)
+{
+	char *p_display_line = p_editor_data->p_display_lines[i];
+	long len = p_editor_data->display_line_lengths[i];
+
+	return len > 0 && p_display_line != NULL && p_display_line[len - 1] == '\n';
+}
+
 int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p_offset,
 					   const char *str, int str_len, long *p_last_updated_line)
 {
@@ -247,6 +278,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	int len;
 	int eol;
 	int display_len;
+	int lf_ending = 0;
 
 	if (p_editor_data == NULL || p_last_updated_line == NULL)
 	{
@@ -257,10 +289,11 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	// Get length of current data line
 	len_data_line = 0;
 	p_data_line = p_editor_data->p_display_lines[display_line];
+	// len_data_line and offset_data_line count within the data line the cursor is in, which is
+	// the only block any of the writes below may reach
 	for (i = display_line - 1; i >= 0; i--)
 	{
-		if (p_editor_data->display_line_lengths[i] > 0 &&
-			p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n') // reach end of prior data line
+		if (is_data_line_end(p_editor_data, i)) // reach end of prior data line
 		{
 			break;
 		}
@@ -274,16 +307,16 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	{
 		len_data_line += p_editor_data->display_line_lengths[i];
 
-		if (p_editor_data->display_line_lengths[i] > 0 &&
-			p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n') // reach end of current data line
+		if (is_data_line_end(p_editor_data, i)) // reach end of current data line
 		{
 			last_display_line = i;
+			lf_ending = is_line_feed_end(p_editor_data, i);
 			break;
 		}
 	}
 
 	// Split current data line if over-length
-	if (len_data_line + str_len + 2 > MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
+	if (len_data_line + str_len + (lf_ending && offset_data_line < len_data_line ? 1 : 2) > MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
 	{
 		if (p_editor_data->display_line_total >= MAX_EDITOR_DATA_LINES)
 		{
@@ -301,7 +334,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			return -2;
 		}
 
-		if (offset_data_line + str_len + 2 >= MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
+		if (offset_data_line + str_len + (lf_ending ? 1 : 2) >= MAX_EDITOR_DATA_LINE_LENGTH || str[0] == CR)
 		{
 			if (str[0] == CR)
 			{
@@ -318,10 +351,26 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 
 			p_data_line[str_len + len_data_line - offset_data_line] = '\0';
 
-			// Add line ending to current display line (data line)
-			p_editor_data->p_display_lines[display_line][offset] = '\n';
-			p_editor_data->p_display_lines[display_line][offset + 1] = '\0';
-			p_editor_data->display_line_lengths[display_line] = offset + 1;
+			// The break a split writes behind the cursor is the line feed that the data line
+			// already ends on when nothing of it follows the cursor there, so the old data line
+			// keeps its text as it is: there is no byte left for a break once that line feed
+			// reaches the last byte of the block either
+			if (len_data_line == offset_data_line && offset >= p_editor_data->display_line_lengths[display_line] &&
+				is_line_feed_end(p_editor_data, display_line))
+			{
+				if (str[0] == CR)
+				{
+					p_data_line[0] = '\n';
+					p_data_line[1] = '\0';
+				}
+			}
+			else
+			{
+				// Add line ending to current display line (data line)
+				p_editor_data->p_display_lines[display_line][offset] = '\n';
+				p_editor_data->p_display_lines[display_line][offset + 1] = '\0';
+				p_editor_data->display_line_lengths[display_line] = offset + 1;
+			}
 
 			*p_display_line = display_line + 1;
 			*p_offset = str_len;
@@ -338,10 +387,26 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 			// Append str to current display line
 			memcpy(p_editor_data->p_display_lines[display_line] + offset, str, (size_t)str_len);
 
-			// Add line ending to current display line (data line)
-			p_editor_data->p_display_lines[display_line][offset + str_len] = '\n';
-			p_editor_data->p_display_lines[display_line][offset + str_len + 1] = '\0';
-			p_editor_data->display_line_lengths[display_line] = offset + str_len + 1;
+			// The break a split writes behind the cursor is the line feed that the data line
+			// already ends on when nothing of it follows the cursor there, so the old data line
+			// keeps its text as it is: there is no byte left for a break once that line feed
+			// reaches the last byte of the block either
+			if (len_data_line == offset_data_line && offset >= p_editor_data->display_line_lengths[display_line] &&
+				is_line_feed_end(p_editor_data, display_line))
+			{
+				if (str[0] == CR)
+				{
+					p_data_line[0] = '\n';
+					p_data_line[1] = '\0';
+				}
+			}
+			else
+			{
+				// Add line ending to current display line (data line)
+				p_editor_data->p_display_lines[display_line][offset + str_len] = '\n';
+				p_editor_data->p_display_lines[display_line][offset + str_len + 1] = '\0';
+				p_editor_data->display_line_lengths[display_line] = offset + str_len + 1;
+			}
 
 			*p_display_line = display_line;
 			*p_offset = offset + str_len;
@@ -475,7 +540,7 @@ int editor_data_insert(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 }
 
 int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p_offset,
-					   long *p_last_updated_line, int del_line)
+					   long *p_last_updated_line, int del_line, int exclude_lf)
 {
 	long display_line = *p_display_line;
 	long offset = *p_offset;
@@ -488,6 +553,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	long split_line_total;
 	long i, j;
 	int str_len = 0;
+	int next_lf_ending = 0;
 	char c;
 
 	if (p_editor_data == NULL || p_last_updated_line == NULL)
@@ -496,13 +562,26 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		return -1;
 	}
 
+	// The character to delete sits in the block the cursor is in, so a cursor at the end of a
+	// display line that is the last of its block while its logical line goes on in the next one
+	// is at the start of that block, where the character is
+	if (offset >= p_editor_data->display_line_lengths[display_line] &&
+		!is_line_feed_end(p_editor_data, display_line) &&
+		is_data_line_end(p_editor_data, display_line) &&
+		display_line + 1 < p_editor_data->display_line_total)
+	{
+		display_line++;
+		offset = 0;
+	}
+
 	// Get length of current data line
 	len_data_line = 0;
 	p_data_line = p_editor_data->p_display_lines[display_line];
+	// len_data_line and offset_data_line count within the data line the cursor is in, which is
+	// the only block any of the writes below may reach
 	for (i = display_line - 1; i >= 0; i--)
 	{
-		if (p_editor_data->display_line_lengths[i] > 0 &&
-			p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n') // reach end of prior data line
+		if (is_data_line_end(p_editor_data, i)) // reach end of prior data line
 		{
 			break;
 		}
@@ -516,8 +595,7 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	{
 		len_data_line += p_editor_data->display_line_lengths[i];
 
-		if (p_editor_data->display_line_lengths[i] > 0 &&
-			p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n') // reach end of current data line
+		if (is_data_line_end(p_editor_data, i)) // reach end of current data line
 		{
 			last_display_line = i;
 			break;
@@ -533,6 +611,11 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	if (del_line)
 	{
 		str_len = (int)(p_editor_data->display_line_lengths[display_line] - offset);
+		// Exclude the ending \n if requested and it exists
+		if (exclude_lf && str_len > 0 && is_line_feed_end(p_editor_data, display_line))
+		{
+			str_len--;
+		}
 	}
 	else if (p_data_line[offset_data_line] > 0 && p_data_line[offset_data_line] < 127)
 	{
@@ -571,17 +654,17 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 		{
 			len_data_line += p_editor_data->display_line_lengths[i];
 
-			if (p_editor_data->display_line_lengths[i] > 0 &&
-				p_editor_data->p_display_lines[i][p_editor_data->display_line_lengths[i] - 1] == '\n') // reach end of current data line
+			if (is_data_line_end(p_editor_data, i)) // reach end of current data line
 			{
 				last_display_line = i;
+				next_lf_ending = is_line_feed_end(p_editor_data, i);
 				break;
 			}
 		}
 
-		// The merged data line keeps the same two bytes free that a split of it at the end
-		// needs for its line feed and terminator
-		if (offset_data_line + len_data_line + 2 > MAX_EDITOR_DATA_LINE_LENGTH) // No enough buffer to merge current data line with next data line
+		// The merged data line keeps one byte free that a split of it at the end
+		// needs for its terminator, the line feed may already exist in the next data line and will be copied to the merged line
+		if (offset_data_line + len_data_line + (next_lf_ending ? 1 : 2) > MAX_EDITOR_DATA_LINE_LENGTH) // No enough buffer to merge current data line with next data line
 		{
 			return 0;
 		}
@@ -655,6 +738,9 @@ int editor_data_delete(EDITOR_DATA *p_editor_data, long *p_display_line, long *p
 	// Return real offset
 	*p_offset = offset;
 
+	// Return real position, which is the data line the cursor was moved to when that was a
+	// different one
+	*p_display_line = display_line;
 	return str_len;
 }
 
@@ -704,6 +790,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 	int i, j;
 	char *p_str;
 	int del_line;
+	int exclude_lf;
 	int tab_width = 0;
 
 	clrline(output_current_row, SCREEN_ROWS);
@@ -817,7 +904,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					if (!key_insert) // overwrite
 					{
 						if (editor_data_delete(p_editor_data, &display_line_out, &offset_out,
-											   &last_updated_line, 0) < 0)
+											   &last_updated_line, 0, 0) < 0)
 						{
 							log_error("editor_data_delete() error");
 						}
@@ -906,6 +993,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					}
 
 					del_line = 0;
+					exclude_lf = 0;
 
 					if (ch == BACKSPACE)
 					{
@@ -926,6 +1014,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					else if (ch == Ctrl('K'))
 					{
 						del_line = 1;
+						exclude_lf = 1;
 					}
 					else if (ch == Ctrl('Y'))
 					{
@@ -939,7 +1028,7 @@ int editor_display(EDITOR_DATA *p_editor_data)
 					offset_out = offset_in;
 
 					if ((str_len = editor_data_delete(p_editor_data, &display_line_out, &offset_out,
-													  &last_updated_line, del_line)) < 0)
+													  &last_updated_line, del_line, exclude_lf)) < 0)
 					{
 						log_error("editor_data_delete() error: %d", str_len);
 					}

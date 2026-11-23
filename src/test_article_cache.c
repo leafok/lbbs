@@ -1371,7 +1371,12 @@ static void remove_cache_dir(void)
 
 int main(void)
 {
-	log_begin("../log/test_article_cache.log", "../log/test_article_cache_error.log");
+	if (log_begin("../log/test_article_cache.log", "../log/test_article_cache_error.log") < 0)
+	{
+		printf("Open log error\n");
+		return -1;
+	}
+
 	log_common_redir(STDOUT_FILENO);
 	log_error_redir(STDERR_FILENO);
 

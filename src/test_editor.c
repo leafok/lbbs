@@ -546,7 +546,7 @@ static void test_pool_lifecycle(void)
 	last_updated = 0;
 	ret = editor_data_insert(NULL, &display_line, &offset, "x", 1, &last_updated);
 	check_int(ret, -1, "editor_data_insert(NULL document)");
-	ret = editor_data_delete(NULL, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(NULL, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, -1, "editor_data_delete(NULL document)");
 
 	p_ed = editor_data_load("abc");
@@ -554,7 +554,7 @@ static void test_pool_lifecycle(void)
 	check_int(editor_data_save(p_ed, NULL, sizeof(buf)), -1, "editor_data_save() into a NULL buffer");
 	check_int(editor_data_insert(p_ed, &display_line, &offset, "x", 1, NULL), -1,
 			"editor_data_insert() with a NULL last_updated_line");
-	check_int(editor_data_delete(p_ed, &display_line, &offset, NULL, 0), -1,
+	check_int(editor_data_delete(p_ed, &display_line, &offset, NULL, 0, 0), -1,
 			"editor_data_delete() with a NULL last_updated_line");
 	check_int(editor_data_save(p_ed, buf, sizeof(buf)), 3, "editor_data_save() of three characters");
 	check_str(buf, "abc", "the buffer of editor_data_save()");
@@ -1264,9 +1264,10 @@ static void test_data_line_capacity(void)
 				"the round trip of the capacity loop");
 		check_model(p_ed, "the capacity loop");
 
-		// Type one character at the end of the last display line. Past the room of its data
-		// line the editor has to break the line there, so the text grows by the character and
-		// by at most one line feed, and none of the text it already had may change.
+		// Type one character at the end of the last display line. A line that fills its block up
+		// to the reserve is broken there, so the text grows by the character and by at most one
+		// line feed, and none of the text it already had may change. A line that ran past its
+		// block has the rest in a block of its own, which has room, and is not broken.
 		display_line = dl_total(p_ed) - 1;
 		offset = dl_len(p_ed, display_line);
 
@@ -1282,10 +1283,8 @@ static void test_data_line_capacity(void)
 		ret = editor_data_insert(p_ed, &display_line, &offset, "z", 1, &last_updated);
 		check_int(ret, 0, "editor_data_insert() at the end of a line of the capacity loop");
 
-		// Only a line that already fills its block up to the last spare byte has to break
-		// where the character no longer fits
 		snprintf(expect, sizeof(expect), "%s%sz", text,
-				len >= MAX_EDITOR_DATA_LINE_LENGTH - 2 ? "\n" : "");
+				len == MAX_EDITOR_DATA_LINE_LENGTH - 2 ? "\n" : "");
 		check_str(save_joined(p_ed, "the round trip after typing at the end of the capacity loop"), expect,
 				"the round trip after typing at the end of the capacity loop");
 		check_model(p_ed, "after typing at the end of the capacity loop");
@@ -1297,7 +1296,7 @@ static void test_data_line_capacity(void)
 		ret = editor_data_insert(p_ed, &display_line, &offset, "\r", 1, &last_updated);
 		check_int(ret, 0, "editor_data_insert() of a break at the end of a line of the capacity loop");
 		snprintf(expect, sizeof(expect), "%s%sz\n", text,
-				len >= MAX_EDITOR_DATA_LINE_LENGTH - 2 ? "\n" : "");
+				len == MAX_EDITOR_DATA_LINE_LENGTH - 2 ? "\n" : "");
 		check_str(save_joined(p_ed, "the round trip after the break of the capacity loop"), expect,
 				"the round trip after the break of the capacity loop");
 		check_model(p_ed, "after the break of the capacity loop");
@@ -1429,7 +1428,7 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 6;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, 0, "editor_data_delete() with the cursor past the text of its line");
 	check_int(display_line, 0, "the cursor of a refused delete");
 	check_int(offset, 6, "the offset of a refused delete");
@@ -1443,7 +1442,7 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 0;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, 1, "editor_data_delete() of one character");
 	check_str(dl_text(p_ed, 0), "ello\n", "the character is gone from the data line");
 	check_int(dl_len(p_ed, 0), 5, "the length after the character delete");
@@ -1461,7 +1460,7 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 5;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, 1, "editor_data_delete() of a line feed");
 	check_str(dl_text(p_ed, 0), "HelloWorld\n", "the two lines join into one data line");
 	check_int(dl_len(p_ed, 0), 11, "the length of the joined line");
@@ -1481,14 +1480,14 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 0;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 1);
-	check_int(ret, 4, "editor_data_delete() of the whole first line");
-	check_str(dl_text(p_ed, 0), "two\n", "the line behind is pulled up over the empty head");
-	check_int(dl_total(p_ed), 2, "the whole line delete drops one display line");
-	check_int(data_lines(p_ed), 2, "the whole line delete releases one data line");
-	check_str(save_joined(p_ed, "the round trip of the whole line delete"), "two\nthree",
-			"the round trip of the whole line delete");
-	check_model(p_ed, "the whole line delete");
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 1, 1);
+	check_int(ret, 3, "editor_data_delete() of the whole first line excluding line feed");
+	check_str(dl_text(p_ed, 0), "\n", "the line feed remains after deleting the text");
+	check_int(dl_total(p_ed), 3, "the line feed keeps the display line");
+	check_int(data_lines(p_ed), 3, "the text delete keeps the data line structure");
+	check_str(save_joined(p_ed, "the round trip of the line delete"), "\ntwo\nthree",
+			"the round trip of the line delete");
+	check_model(p_ed, "the line delete");
 	editor_data_cleanup(p_ed);
 
 	// Ctrl-K from the middle of a line keeps what is in front of the cursor
@@ -1496,10 +1495,10 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 2;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 1);
-	check_int(ret, 2, "editor_data_delete() of the rest of a line");
-	check_str(dl_text(p_ed, 0), "ontwo\n", "the head of the line is kept and the next line joins it");
-	check_str(save_joined(p_ed, "the round trip of the rest of the line"), "ontwo\nthree",
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 1, 1);
+	check_int(ret, 1, "editor_data_delete() of the rest of a line");
+	check_str(dl_text(p_ed, 0), "on\n", "the head of the line is kept and the line feed remains");
+	check_str(save_joined(p_ed, "the round trip of the rest of the line"), "on\ntwo\nthree",
 			"the round trip of the rest of the line");
 	check_model(p_ed, "the rest of the line");
 	editor_data_cleanup(p_ed);
@@ -1509,7 +1508,7 @@ static void test_delete(void)
 	display_line = 2;
 	offset = 0;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 1);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 1, 0);
 	check_int(ret, 5, "editor_data_delete() of the last line of the document");
 	check_int(dl_len(p_ed, 2), 0, "the last display line is emptied");
 	check_int(dl_total(p_ed), 3, "the last line keeps its display line");
@@ -1526,7 +1525,7 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 0;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, 1, "editor_data_delete() of the line feed of an empty line");
 	check_str(dl_text(p_ed, 0), "abc\n", "an empty line pulled up takes the text of the next one");
 	check_int(dl_total(p_ed), 3, "the pull up drops one display line");
@@ -1543,7 +1542,7 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 5;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, 1, "editor_data_delete() of the trailing line feed of the text");
 	check_str(dl_text(p_ed, 0), "short", "the last line loses its break");
 	check_int(dl_total(p_ed), 1, "the display line the trailing break opened goes with it");
@@ -1560,7 +1559,7 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 0;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, 1, "editor_data_delete() of the first of thirty characters");
 	check_int(dl_len(p_ed, 0), 29, "the length of the line after the delete");
 	check_int(dl_width(p_ed, 0), 29, "the width of the line after the delete");
@@ -1569,7 +1568,7 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 20;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 1);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 1, 1);
 	check_int(ret, 9, "editor_data_delete() of the rest of a twenty nine character line");
 	check_str(save_joined(p_ed, "the round trip of the rest of a twenty nine character line"),
 			"12345678901234567890", "the round trip of the rest of a twenty nine character line");
@@ -1585,7 +1584,7 @@ static void test_delete(void)
 	display_line = 1;
 	offset = 10;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 1);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 1, 1);
 	check_int(ret, 70, "editor_data_delete() of the rest of a wrapped display line");
 	check_int(dl_len(p_ed, 0), 80, "the display line before the delete keeps its width");
 	check_int(dl_len(p_ed, 1), 50, "the tail of the wrapped line moves up into its own display line");
@@ -1605,7 +1604,7 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 1;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, 3, "editor_data_delete() removes all three bytes of a CJK character");
 	check_str(save_joined(p_ed, "the round trip of the wide delete"), "ab", "the round trip of the wide delete");
 	check_int(dl_width(p_ed, 0), 2, "the width after the wide delete");
@@ -1614,7 +1613,7 @@ static void test_delete(void)
 	display_line = 0;
 	offset = 0;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, 1, "editor_data_delete() of an ASCII character next to the wide one");
 	check_str(save_joined(p_ed, "the round trip after deleting ASCII"), "b", "the round trip after deleting ASCII");
 	check_model(p_ed, "after deleting ASCII");
@@ -1635,7 +1634,7 @@ static void test_delete(void)
 	display_line = 12;
 	offset = 61;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, 0, "editor_data_delete() of a line feed that has no room to join");
 	check_str(save_joined(p_ed, "the round trip of the refused join"), text, "the round trip of the refused join");
 	check_int(dl_total(p_ed), 14, "the refused join keeps the display lines");
@@ -1652,7 +1651,7 @@ static void test_delete(void)
 	display_line = 12;
 	offset = 60;
 	last_updated = 0;
-	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0);
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
 	check_int(ret, 1, "editor_data_delete() of a line feed with room to join");
 	cut_text(expect, sizeof(expect), text, 1020, "");
 	check_str(save_joined(p_ed, "the round trip of the join into a full block"), expect,
@@ -2087,7 +2086,7 @@ static void test_display_typing(void)
 	push_key(Ctrl('W'));
 	ret = editor_display(p_ed);
 	check_int(ret, Ctrl('W'), "editor_display() with Ctrl-K");
-	check_str(save_joined(p_ed, "the text after Ctrl-K"), "cd", "Ctrl-K takes the rest of the line with it");
+	check_str(save_joined(p_ed, "the text after Ctrl-K"), "\ncd", "Ctrl-K takes the rest of the line excluding the line feed");
 	check_model(p_ed, "after Ctrl-K");
 
 	reset_keys();
@@ -2096,7 +2095,7 @@ static void test_display_typing(void)
 	push_key(Ctrl('W'));
 	ret = editor_display(p_ed);
 	check_int(ret, Ctrl('W'), "editor_display() with Ctrl-Y");
-	check_str(save_joined(p_ed, "the text after Ctrl-Y"), "", "Ctrl-Y on the last line leaves an empty document");
+	check_str(save_joined(p_ed, "the text after Ctrl-Y"), "cd", "Ctrl-Y on the empty first line removes it leaving the second line");
 	check_model(p_ed, "after Ctrl-Y");
 	editor_data_cleanup(p_ed);
 
@@ -2149,9 +2148,9 @@ static void test_display_typing(void)
 	restore_fixed_width();
 	editor_data_cleanup(p_ed);
 
-	// Typing at the end of a document whose line does not fit one data block: the editor has
-	// to break the line where the block ran out, which is where the text gains a line feed it
-	// did not have
+	// Typing at the end of a document whose line does not fit one data block: the text past
+	// the first block went to one of its own, which has room, so the line only gains what is
+	// typed into it
 	fill_chars(text, MAX_EDITOR_DATA_LINE_LENGTH + 7, 'a');
 	p_ed = editor_data_load(text);
 	check_true(p_ed != NULL, "editor_data_load() of a line past one block for typing");
@@ -2163,9 +2162,9 @@ static void test_display_typing(void)
 	push_key(Ctrl('W'));
 	ret = editor_display(p_ed);
 	check_int(ret, Ctrl('W'), "editor_display() typing at the end of a line past one block");
-	snprintf(expect, sizeof(expect), "%s\ntail", text);
+	snprintf(expect, sizeof(expect), "%stail", text);
 	check_str(save_joined(p_ed, "the text typed at the end of a line past one block"), expect,
-			"the split of a full data block breaks the line where it ran out");
+			"typing at the end of a line past one block does not break it");
 	check_model(p_ed, "after typing at the end of a line past one block");
 
 	reset_keys();
@@ -2175,7 +2174,7 @@ static void test_display_typing(void)
 	push_key(Ctrl('W'));
 	ret = editor_display(p_ed);
 	check_int(ret, Ctrl('W'), "editor_display() breaking a line past one block");
-	snprintf(expect, sizeof(expect), "%s\ntail\nsec", text);
+	snprintf(expect, sizeof(expect), "%stail\nsec", text);
 	check_str(save_joined(p_ed, "the text after breaking a line past one block"), expect,
 			"the text after breaking a line past one block");
 	check_model(p_ed, "after breaking a line past one block");
@@ -2438,9 +2437,204 @@ static void test_display_navigation(void)
 	printf("Completed testing #12: %d of %d checks passed\n", check_count - failed_count, check_count);
 }
 
+// ---------------------------------------------------------------------------
+// #13: a logical line over one data block, and the line feed that ends a data line
+// ---------------------------------------------------------------------------
+
+// The first display line at or after `from` whose text ends on a line feed
+static long line_feed_at(const EDITOR_DATA *p_ed, long from)
+{
+	long i;
+
+	for (i = from; i < dl_total(p_ed); i++)
+	{
+		if (dl_len(p_ed, i) > 0 && dl_ptr(p_ed, i)[dl_len(p_ed, i) - 1] == '\n')
+		{
+			return i;
+		}
+	}
+
+	return NO_LINE;
+}
+
+// The last display line of the data line that `at` is in, which ends on a line feed or where
+// the block it is stored in runs out
+static long data_line_end(const EDITOR_DATA *p_ed, long at)
+{
+	long i = at;
+
+	while (i + 1 < dl_total(p_ed) && dl_ptr(p_ed, i + 1) == dl_ptr(p_ed, i) + dl_len(p_ed, i) &&
+		   dl_len(p_ed, i) > 0 && dl_ptr(p_ed, i)[dl_len(p_ed, i) - 1] != '\n')
+	{
+		i++;
+	}
+
+	return i;
+}
+
+static void test_data_line_blocks(void)
+{
+	static char text[MAX_EDITOR_DATA_LINE_LENGTH * 2 + 8];
+	static char want[MAX_EDITOR_DATA_LINE_LENGTH * 2 + 24];
+	static char expect[MAX_EDITOR_DATA_LINE_LENGTH * 2 + 24];
+	const char *p_saved;
+	EDITOR_DATA *p_ed;
+	long display_line;
+	long offset;
+	long last_updated;
+	long feed_line;
+	long end_line;
+	int ret;
+
+	printf("Testing #13 ...\n");
+
+	// A logical line longer than one block is stored in several of them, and editing it may
+	// only move the text of the block the cursor sits in: the copies that ran to the end of
+	// the logical line wrote past that block and lost the text the blocks behind it held.
+	memset(text, (int)'a', 2000);
+	text[2000] = '\n';
+	strcpy(text + 2001, "tail");
+	p_ed = editor_data_load(text);
+	check_true(p_ed != NULL, "editor_data_load() of a logical line over one block");
+	check_int(data_lines(p_ed), 4, "a logical line over one block takes a data line per block");
+	check_model(p_ed, "the logical line over one block");
+
+	display_line = 1;
+	offset = 10;
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "x", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() inside a logical line over one block");
+	splice_text(expect, sizeof(expect), text, 90, "x");
+	check_str(save_joined(p_ed, "the text typed inside a logical line over one block"), expect,
+			"typing inside a logical line over one block only adds the character");
+	check_int(display_line, 1, "the cursor stays on the display line it typed into");
+	check_int(offset, 11, "the cursor sits behind the character it typed");
+	check_model(p_ed, "typing inside a logical line over one block");
+
+	editor_data_cleanup(p_ed);
+
+	// The character at the end of a block belongs to the block behind it, and so does the
+	// display line the cursor has to move to for the delete that takes it
+	p_ed = editor_data_load(text);
+	end_line = data_line_end(p_ed, 1);
+	display_line = end_line;
+	offset = dl_len(p_ed, end_line);
+	last_updated = 0;
+	ret = editor_data_delete(p_ed, &display_line, &offset, &last_updated, 0, 0);
+	check_int(ret, 1, "editor_data_delete() at the end of a data block");
+	check_int(display_line, end_line + 1, "the cursor moves to the block the character came from");
+	check_int(offset, 0, "the cursor sits at the start of that block");
+	snprintf(expect, sizeof(expect), "%.*s%s", 960, text, text + 961);
+	check_str(save_joined(p_ed, "the text after deleting at the end of a data block"), expect,
+			"deleting at the end of a data block takes the first character of the next one");
+	check_model(p_ed, "deleting at the end of a data block");
+
+	editor_data_cleanup(p_ed);
+
+	// A data line that ends on a line feed keeps its terminator as the only byte behind its
+	// text, so it takes the character a line without one has to break for, and the last line
+	// of a document and the lines before it then hold the same amount of text.
+	fill_chars(text, MAX_EDITOR_DATA_LINE_LENGTH - 3, 'a');
+	text[MAX_EDITOR_DATA_LINE_LENGTH - 3] = '\n';
+	strcpy(text + MAX_EDITOR_DATA_LINE_LENGTH - 2, "tail");
+	p_ed = editor_data_load(text);
+	check_true(p_ed != NULL, "editor_data_load() of a line feed at the reserve of a block");
+	feed_line = line_feed_at(p_ed, 0);
+	check_int(feed_line, 12, "the line feed ends the display line the block ran out on");
+	check_int(dl_len(p_ed, feed_line), MAX_EDITOR_DATA_LINE_LENGTH - 2 - SCREEN_COLS * 12,
+			"the display line that ends the data line holds the rest of it");
+	check_int(widest_data_line(p_ed), MAX_EDITOR_DATA_LINE_LENGTH - 2,
+			"a data line that ends on a line feed is full to its one byte reserve");
+	check_model(p_ed, "the line feed at the reserve of a block");
+
+	display_line = feed_line;
+	offset = 5;
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "z", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() in front of the line feed of a full data line");
+	// The offset is relative to the display line, which is the last of the block and so sits
+	// behind its twelve whole ones
+	splice_text(want, sizeof(want), text, SCREEN_COLS * 12 + 5, "z");
+	check_str(save_joined(p_ed, "the text typed in front of that line feed"), want,
+			"typing in front of the line feed only adds the character");
+	check_int(widest_data_line(p_ed), MAX_EDITOR_DATA_LINE_LENGTH - 1,
+			"the data line that ends on a line feed holds the extra character");
+	check_model(p_ed, "typing in front of the line feed of a full data line");
+	editor_data_cleanup(p_ed);
+
+	// Behind that line feed the text belongs to the logical line after it, which is the byte
+	// the line feed leaves free, so it goes to a data line of its own without a line feed of
+	// its own in front of it
+	p_ed = editor_data_load(text);
+	feed_line = line_feed_at(p_ed, 0);
+	display_line = feed_line;
+	offset = 5;
+	last_updated = 0;
+	editor_data_insert(p_ed, &display_line, &offset, "z", 1, &last_updated);
+	feed_line = line_feed_at(p_ed, 0);
+	end_line = dl_total(p_ed);
+	display_line = feed_line;
+	offset = dl_len(p_ed, feed_line);
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "q", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() behind the line feed of a full data line");
+	p_saved = save_joined(p_ed, "the text typed behind that line feed");
+	snprintf(expect, sizeof(expect), "%.*s%s%s", (int)(strstr(want, "tail") - want), want, "q", strstr(want, "tail"));
+	check_str(p_saved, expect, "typing behind the line feed starts the next line without an empty one");
+	check_true(strstr(p_saved, "\n\n") == NULL, "typing behind the line feed invents no empty line");
+	check_int(dl_total(p_ed), end_line + 1, "the character typed takes one display line of its own");
+	check_model(p_ed, "typing behind the line feed of a full data line");
+	editor_data_cleanup(p_ed);
+
+	// A break asked for at that place does want the empty line, and it is the data line that
+	// starts with the line feed the block already ends on
+	p_ed = editor_data_load(text);
+	feed_line = line_feed_at(p_ed, 0);
+	display_line = feed_line;
+	offset = 5;
+	last_updated = 0;
+	editor_data_insert(p_ed, &display_line, &offset, "z", 1, &last_updated);
+	feed_line = line_feed_at(p_ed, 0);
+	display_line = feed_line;
+	offset = dl_len(p_ed, feed_line);
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "\r", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() of a break behind the line feed of a full data line");
+	snprintf(expect, sizeof(expect), "%.*s%s%s", (int)(strstr(want, "tail") - want), want, "\n", strstr(want, "tail"));
+	check_str(save_joined(p_ed, "the text after the break behind that line feed"), expect,
+			"the break behind the line feed asks for an empty line");
+	check_int(dl_len(p_ed, display_line), 1, "the empty line is the line feed of the new data line");
+	check_model(p_ed, "the break behind the line feed of a full data line");
+	editor_data_cleanup(p_ed);
+
+	// The same fixture without the preceding typing: the caret directly behind the line feed of
+	// a data line that is full to its reserve, which is what the one-byte relaxation has to
+	// keep in bounds
+	p_ed = editor_data_load(text);
+	feed_line = line_feed_at(p_ed, 0);
+	display_line = feed_line;
+	offset = dl_len(p_ed, feed_line);
+	last_updated = 0;
+	ret = editor_data_insert(p_ed, &display_line, &offset, "q", 1, &last_updated);
+	check_int(ret, 0, "editor_data_insert() directly behind the line feed of a full data line");
+	p_saved = save_joined(p_ed, "the text typed directly behind that line feed");
+	snprintf(expect, sizeof(expect), "%.*s%s%s", (int)(strstr(text, "tail") - text), text, "q", strstr(text, "tail"));
+	check_str(p_saved, expect, "typing directly behind the line feed starts the next line");
+	check_true(strstr(p_saved, "\n\n") == NULL, "typing directly behind the line feed invents no empty line");
+	check_model(p_ed, "typing directly behind the line feed of a full data line");
+	editor_data_cleanup(p_ed);
+
+	printf("Completed testing #13: %d of %d checks passed\n", check_count - failed_count, check_count);
+}
+
 int main(void)
 {
-	log_begin("../log/test_editor.log", "../log/test_editor_error.log");
+	if (log_begin("../log/test_editor.log", "../log/test_editor_error.log") < 0)
+	{
+		printf("Open log error\n");
+		return -1;
+	}
+
 	log_common_redir(STDOUT_FILENO);
 	log_error_redir(STDERR_FILENO);
 
@@ -2461,6 +2655,7 @@ int main(void)
 	test_last_line_reserve();
 	test_display_typing();
 	test_display_navigation();
+	test_data_line_blocks();
 
 	// Every document of the suite is closed above, so this releases the pools themselves and
 	// LeakSanitizer only has the log files left to complain about
