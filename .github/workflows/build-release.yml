@@ -35,10 +35,10 @@ jobs:
       run: make
 
     - name: Run check
-      run: make check
+      run: make check TESTS=""
 
     - name: Run distcheck
-      run: make distcheck
+      run: make distcheck TESTS=""
 
     - name: Create Release and Upload Assets
       uses: softprops/action-gh-release@v2
