@@ -1080,8 +1080,8 @@ int main(int argc, char *argv[])
 
 	printf("Completed testing #7\n");
 
-	printf("Press ENTER to exit...");
-	getchar();
+	// printf("Press ENTER to exit...");
+	// getchar();
 
 	user_list_pool_cleanup();
 	section_list_cleanup();

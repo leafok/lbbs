@@ -1,7 +1,12 @@
 bin_PROGRAMS = bbsd
-test_PROGRAMS = test_trie_dict test_file_loader test_section_list test_lml test_ssh_server test_article_favor test_article_view_log \
-			   test_memory_pool test_bbs test_bwf test_hash_dict test_ip_mask test_user_priv test_str_process \
-			   test_user_stat test_menu test_editor test_article_cache test_common test_bbs_cmd test_init test_io test_log
+
+# test_ssh_server binds a port and loops forever, so it is built but never run by check
+unit_TESTS = test_trie_dict test_file_loader test_section_list test_lml test_article_favor test_article_view_log \
+			 test_memory_pool test_bbs test_bwf test_hash_dict test_ip_mask test_user_priv test_str_process \
+			 test_user_stat test_menu test_editor test_article_cache test_common test_bbs_cmd test_init test_io test_log
+
+TESTS = $(unit_TESTS)
+test_PROGRAMS = $(unit_TESTS) test_ssh_server
 
 testdir = ${prefix}/test
 

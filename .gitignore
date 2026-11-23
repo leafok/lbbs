@@ -34,6 +34,7 @@
 /ltmain.sh
 /m4
 /missing
+/test-driver
 /NEWS
 /var
 CVS
@@ -57,3 +58,4 @@ lt-*.c
 /src/bbsd
 /src/test_*
 !/src/test_*.c
+/src/test-suite.log
