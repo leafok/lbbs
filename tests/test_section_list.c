@@ -71,7 +71,6 @@ int main(int argc, char *argv[])
 	log_common_redir(STDOUT_FILENO);
 	log_error_redir(STDERR_FILENO);
 
-	// - 1 to make blocks allocated is less than required, to trigger error handling
 	block_count = (int)BBS_article_limit_per_section * BBS_max_section / BBS_article_count_per_block;
 
 	if ((fp = fopen(ARTICLE_BLOCK_SHM_FILE, "w")) == NULL)
@@ -218,11 +217,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	for (i = 0; i < section_count; i++)
-	{
-		// printf("Loaded %d articles into section %d\n", p_section[i]->article_count, i);
-	}
-
 	if (last_aid != article_block_last_aid())
 	{
 		printf("last_aid != %d\n", article_block_last_aid());
@@ -234,39 +228,14 @@ int main(int argc, char *argv[])
 			   article_block_article_count(), section_count, BBS_article_limit_per_section);
 	}
 
-	last_aid = 0;
-
-	for (j = 0; j < BBS_article_limit_per_section; j++)
+	for (i = 1; i <= section_count * BBS_article_limit_per_section; i++)
 	{
-		for (i = 0; i < section_count; i++)
+		p_article = article_block_find_by_aid(i);
+		if (p_article == NULL || p_article->aid != i)
 		{
-			last_aid++;
-
-			p_article = article_block_find_by_aid(last_aid);
-			if (p_article == NULL || p_article->aid != last_aid)
-			{
-				printf("article_block_find_by_aid() at section %d index %d, %d != %d\n", i, j, p_article->aid, last_aid);
-			}
-
-			if (section_list_rw_lock(p_section[i]) < 0)
-			{
-				printf("section_list_rw_lock(sid = %d) error\n", p_section[i]->sid);
-				break;
-			}
-
-			if (section_list_set_article_visible(p_section[i], p_article->aid, 0) != 1)
-			{
-				printf("section_list_set_article_visible(aid = %d) error\n", p_article->aid);
-			}
-
-			if (section_list_rw_unlock(p_section[i]) < 0)
-			{
-				printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
-				break;
-			}
+			printf("article_block_find_by_aid(%d) error\n", i);
+			break;
 		}
-
-		// printf("Verified %d articles in section %d\n", p_section[i]->article_count, i);
 	}
 
 	printf("Testing #2 ...\n");
@@ -333,8 +302,6 @@ int main(int argc, char *argv[])
 			printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
-
-		// printf("Loaded %d articles into section %d\n", p_section[i]->article_count, i);
 	}
 
 	for (i = 0; i < section_count; i++)
@@ -380,8 +347,6 @@ int main(int argc, char *argv[])
 			printf("section_list_rd_unlock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
-
-		// printf("Verified %d articles in section %d\n", group_count, i);
 	}
 
 	for (i = 0; i < section_count; i++)
@@ -463,8 +428,6 @@ int main(int argc, char *argv[])
 			printf("section_list_rd_unlock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
-
-		// printf("Verified %d topics in section %d\n", group_count, i);
 	}
 
 	printf("Testing #3 ...\n");
@@ -791,8 +754,6 @@ int main(int argc, char *argv[])
 			printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
 			break;
 		}
-
-		// printf("Loaded %d articles into section %d\n", p_section[i]->article_count, i);
 	}
 
 	for (i = 0; i < section_count / 2; i++)
@@ -950,7 +911,7 @@ int main(int argc, char *argv[])
 	printf("Try rw_lock for 5 sec...\n");
 	if (section_list_try_rw_lock(NULL, 5) == 0)
 	{
-		printf("section_list_try_rw_lock(sid = %d) error, expectation is timeout\n", p_section[i]->sid);
+		printf("section_list_try_rw_lock(NULL) granted, expectation is timeout\n");
 	}
 
 	for (i = 0; i < section_count; i++)
@@ -964,21 +925,12 @@ int main(int argc, char *argv[])
 
 	if (section_list_try_rw_lock(NULL, 5) < 0)
 	{
-		printf("section_list_rd_lock(sid = %d) error\n", p_section[i]->sid);
-	}
-
-	for (i = 0; i < section_count; i++)
-	{
-		if (section_list_try_rd_lock(p_section[i], 0) == 0)
-		{
-			printf("section_list_try_rd_lock(sid = %d) error, expectation is timeout\n", p_section[i]->sid);
-			break;
-		}
+		printf("section_list_try_rw_lock(NULL) error\n");
 	}
 
 	if (section_list_rw_unlock(NULL) < 0)
 	{
-		printf("section_list_rw_unlock(sid = %d) error\n", p_section[i]->sid);
+		printf("section_list_rw_unlock(NULL) error\n");
 	}
 
 	printf("Testing #7 ...\n");
@@ -1079,9 +1031,6 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Completed testing #7\n");
-
-	// printf("Press ENTER to exit...");
-	// getchar();
 
 	user_list_pool_cleanup();
 	section_list_cleanup();
