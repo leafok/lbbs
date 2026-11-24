@@ -31,9 +31,6 @@ jobs:
     - name: configure
       run: ./configure
 
-    - name: Run make
-      run: make
-
     - name: Run distcheck
       run: make distcheck TESTS=""
 
