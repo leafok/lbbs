@@ -52,8 +52,7 @@ export LBBS_HOME_DIR=/usr/local/lbbs
 
 **对于 MSYS2 with MinGW-w64 工具链：**
 ```bash
-./configure --prefix=$LBBS_HOME_DIR --disable-shared
-PKG_CONFIG_PATH=/mingw64/lib/pkgconfig/ ICONV_CFLAGS="-I/usr/include" ICONV_LIBS="/usr/lib/libiconv.dll.a"
+./configure --prefix=$LBBS_HOME_DIR --disable-shared PKG_CONFIG_PATH=/mingw64/lib/pkgconfig/ ICONV_CFLAGS="-I/usr/include" ICONV_LIBS="-liconv" LDFLAGS="-L/usr/lib"
 ```
 
 ```bash
