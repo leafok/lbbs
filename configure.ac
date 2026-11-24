@@ -115,6 +115,7 @@ AC_CHECK_FUNCS([dup2 getaddrinfo inet_ntop memset mkdir rmdir regcomp poll socke
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 tests/Makefile
                  utils/Makefile
                  utils/game/Makefile
                  conf/lbbs.service
