@@ -5,9 +5,7 @@ unit_TESTS = test_trie_dict test_file_loader test_section_list test_lml test_art
 			 test_section_list_loader test_user_list
 
 TESTS = $(unit_TESTS)
-test_PROGRAMS = $(unit_TESTS) test_ssh_server
-
-testdir = ${prefix}/test
+check_PROGRAMS = $(unit_TESTS) test_ssh_server
 
 SRC = ${top_srcdir}/src
 
