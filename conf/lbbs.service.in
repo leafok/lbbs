@@ -2,10 +2,14 @@
 Description=LBBS Server
 Wants=network-online.target
 After=network-online.target mysql.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 User=bbs
 Group=bbs
+Restart=always
+RestartSec=2s
 
 Type=notify
 ExecStart=@prefix@/bin/bbsd -f
