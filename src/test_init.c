@@ -357,7 +357,7 @@ static void test_empty_file(void)
 
 int main(void)
 {
-	if (log_begin("../log/test_init.log", "../log/test_init_error.log") < 0)
+	if (log_begin("~test_init.log", "~test_init_error.log") < 0)
 	{
 		printf("Open log error\n");
 
@@ -390,5 +390,8 @@ int main(void)
 
 	printf("Done\n");
 
+	log_end();
+	unlink("~test_init.log");
+	unlink("~test_init_error.log");
 	return 0;
 }

@@ -1547,7 +1547,7 @@ int main(int argc, char *argv[])
 	(void)argc;
 	(void)argv;
 
-	if (log_begin("../log/test_menu.log", "../log/test_menu_error.log") < 0)
+	if (log_begin("~test_menu.log", "~test_menu_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -1618,5 +1618,7 @@ int main(int argc, char *argv[])
 
 	printf("Done\n");
 
+	unlink("~test_menu.log");
+	unlink("~test_menu_error.log");
 	return 0;
 }

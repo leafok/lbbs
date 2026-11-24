@@ -15,18 +15,41 @@
 #include <errno.h>
 #include <libgen.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-const char *files[] = {
-	"../data/welcome.txt",
-	"../data/copyright.txt",
-	"../data/register.txt",
-	"../data/license.txt",
-	"../data/login_error.txt",
-	"../data/read_help.txt"};
+static const char *file_names[] = {
+	"data/welcome.txt",
+	"data/copyright.txt",
+	"data/register.txt",
+	"data/license.txt",
+	"data/login_error.txt",
+	"data/read_help.txt"};
 
-int files_cnt = 6;
+#define FILES_CAP 6
+#define PATH_CAP 512
+static const char *files[FILES_CAP];
+
+int files_cnt = FILES_CAP;
+
+static void resolve_files(void)
+{
+	const char *srcdir = getenv("srcdir");
+	char buf[PATH_CAP];
+	int i;
+
+	if (srcdir == NULL)
+	{
+		srcdir = ".";
+	}
+
+	for (i = 0; i < files_cnt; i++)
+	{
+		snprintf(buf, sizeof(buf), "%s/../%s", srcdir, file_names[i]);
+		files[i] = strdup(buf);
+	}
+}
 
 int main(int argc, char *argv[])
 {
@@ -37,7 +60,7 @@ int main(int argc, char *argv[])
 	const void *p_data;
 	const long *p_line_offsets;
 
-	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
+	if (log_begin("~test_file_loader.log", "~test_file_loader_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -45,6 +68,8 @@ int main(int argc, char *argv[])
 
 	log_common_redir(STDOUT_FILENO);
 	log_error_redir(STDERR_FILENO);
+
+	resolve_files();
 
 	printf("Testing #1\n");
 
@@ -131,5 +156,7 @@ int main(int argc, char *argv[])
 
 	log_end();
 
+	unlink("~test_file_loader.log");
+	unlink("~test_file_loader_error.log");
 	return 0;
 }

@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 	int64_t value;
 	FILE *fp;
 
-	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
+	if (log_begin("~test_trie_dict.log", "~test_trie_dict_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -261,5 +261,7 @@ int main(int argc, char *argv[])
 
 	log_end();
 
+	unlink("~test_trie_dict.log");
+	unlink("~test_trie_dict_error.log");
 	return 0;
 }

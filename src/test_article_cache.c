@@ -1371,7 +1371,7 @@ static void remove_cache_dir(void)
 
 int main(void)
 {
-	if (log_begin("../log/test_article_cache.log", "../log/test_article_cache_error.log") < 0)
+	if (log_begin("~test_article_cache.log", "~test_article_cache_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -1447,5 +1447,8 @@ int main(void)
 
 	printf("Done\n");
 
+	log_end();
+	unlink("~test_article_cache.log");
+	unlink("~test_article_cache_error.log");
 	return 0;
 }

@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	char username_list[10][BBS_username_max_len + 1];
 	FILE *fp;
 
-	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
+	if (log_begin("~test_user_list.log", "~test_user_list_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -385,5 +385,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	log_end();
+	unlink("~test_user_list.log");
+	unlink("~test_user_list_error.log");
 	return 0;
 }

@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 	int affected_count;
 	FILE *fp;
 
-	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
+	if (log_begin("~test_section_list.log", "~test_section_list_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -1114,5 +1114,7 @@ int main(int argc, char *argv[])
 
 	log_end();
 
+	unlink("~test_section_list.log");
+	unlink("~test_section_list_error.log");
 	return 0;
 }

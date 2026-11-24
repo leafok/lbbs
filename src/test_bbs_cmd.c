@@ -162,7 +162,7 @@ static void test_unknown(void)
 
 int main(void)
 {
-	if (log_begin("../log/test_bbs_cmd.log", "../log/test_bbs_cmd_error.log") < 0)
+	if (log_begin("~test_bbs_cmd.log", "~test_bbs_cmd_error.log") < 0)
 	{
 		printf("Open log error\n");
 
@@ -195,5 +195,8 @@ int main(void)
 
 	printf("Done\n");
 
+	log_end();
+	unlink("~test_bbs_cmd.log");
+	unlink("~test_bbs_cmd_error.log");
 	return 0;
 }

@@ -255,7 +255,7 @@ static void test_conv_init_cleanup(void)
 
 int main(void)
 {
-	if (log_begin("../log/test_io.log", "../log/test_io_error.log") < 0)
+	if (log_begin("~test_io.log", "~test_io_error.log") < 0)
 	{
 		printf("Open log error\n");
 
@@ -282,5 +282,8 @@ int main(void)
 
 	printf("Done\n");
 
+	log_end();
+	unlink("~test_io.log");
+	unlink("~test_io_error.log");
 	return 0;
 }

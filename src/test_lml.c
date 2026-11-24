@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
+	if (log_begin("~test_lml.log", "~test_lml_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -171,5 +171,7 @@ int main(int argc, char *argv[])
 
 	log_end();
 
+	unlink("~test_lml.log");
+	unlink("~test_lml_error.log");
 	return 0;
 }

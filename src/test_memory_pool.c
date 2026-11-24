@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	int j;
 	int k;
 
-	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
+	if (log_begin("~test_memory_pool.log", "~test_memory_pool_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -111,5 +111,7 @@ int main(int argc, char *argv[])
 
 	log_end();
 
+	unlink("~test_memory_pool.log");
+	unlink("~test_memory_pool_error.log");
 	return 0;
 }

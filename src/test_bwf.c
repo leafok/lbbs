@@ -13,6 +13,7 @@
 #include "bwf.h"
 #include "log.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -37,10 +38,12 @@ const int str_cnt = sizeof(str_in) / sizeof(const char *);
 int main(int argc, char *argv[])
 {
 	char str[256];
+	char conf_path[512];
+	const char *srcdir;
 	int i;
 	int ret;
 
-	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
+	if (log_begin("~test_bwf.log", "~test_bwf_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -49,8 +52,15 @@ int main(int argc, char *argv[])
 	log_common_redir(STDOUT_FILENO);
 	log_error_redir(STDERR_FILENO);
 
+	srcdir = getenv("srcdir");
+	if (srcdir == NULL)
+	{
+		srcdir = ".";
+	}
+	snprintf(conf_path, sizeof(conf_path), "%s/../conf/badwords.conf.default", srcdir);
+
 	// Load BWF config
-	if (bwf_load("../conf/badwords.conf.default") < 0)
+	if (bwf_load(conf_path) < 0)
 	{
 		return -2;
 	}
@@ -86,5 +96,7 @@ int main(int argc, char *argv[])
 
 	log_end();
 
+	unlink("~test_bwf.log");
+	unlink("~test_bwf_error.log");
 	return 0;
 }

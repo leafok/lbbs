@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 	(void)argc;
 	(void)argv;
 
-	if (log_begin("../log/test_user_stat.log", "../log/test_user_stat_error.log") < 0)
+	if (log_begin("~test_user_stat.log", "~test_user_stat_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -400,5 +400,7 @@ int main(int argc, char *argv[])
 
 	printf("Done\n");
 
+	unlink("~test_user_stat.log");
+	unlink("~test_user_stat_error.log");
 	return 0;
 }

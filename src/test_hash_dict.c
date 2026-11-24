@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	int ret;
 	const int dict_item_count = 10000 * 10000;
 
-	if (log_begin("../log/bbsd.log", "../log/error.log") < 0)
+	if (log_begin("~test_hash_dict.log", "~test_hash_dict_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -167,5 +167,7 @@ int main(int argc, char *argv[])
 
 	log_end();
 
+	unlink("~test_hash_dict.log");
+	unlink("~test_hash_dict_error.log");
 	return 0;
 }

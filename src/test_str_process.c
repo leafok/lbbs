@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
 		printf("WARNING: setlocale(LC_ALL, en_US.UTF-8) failed, wide character tests may differ\n");
 	}
 
-	if (log_begin("../log/test_str_process.log", "../log/test_str_process_error.log") < 0)
+	if (log_begin("~test_str_process.log", "~test_str_process_error.log") < 0)
 	{
 		printf("Open log error\n");
 		return -1;
@@ -359,5 +359,7 @@ int main(int argc, char *argv[])
 
 	printf("Done\n");
 
+	unlink("~test_str_process.log");
+	unlink("~test_str_process_error.log");
 	return 0;
 }
