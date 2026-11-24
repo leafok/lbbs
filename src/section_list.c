@@ -1952,6 +1952,7 @@ int section_list_rd_unlock(SECTION_LIST *p_section)
 	else
 	{
 		log_error("read_lock_count[%d] already 0", index);
+		ret = -1;
 	}
 
 	if (index != BBS_max_section && p_section_list_pool->read_lock_count[BBS_max_section] > 0)
@@ -1961,6 +1962,7 @@ int section_list_rd_unlock(SECTION_LIST *p_section)
 	else
 	{
 		log_error("read_lock_count[%d] already 0", BBS_max_section);
+		ret = -1;
 	}
 
 	if (index != BBS_max_section)
@@ -2024,6 +2026,7 @@ int section_list_rw_unlock(SECTION_LIST *p_section)
 	else
 	{
 		log_error("write_lock_count[%d] already 0", index);
+		ret = -1;
 	}
 
 	if (sem_post(&(p_section_list_pool->sem[index])) == -1)
