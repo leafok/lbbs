@@ -1,21 +1,12 @@
-/build
-/conf/bbsd.conf
-/conf/bbsnet.conf
-/conf/badwords.conf
-/conf/ssh_host_rsa_key*
-/conf/ssh_host_ed25519_key*
-/conf/ssh_host_ecdsa_key*
-/utils/conf/db_conn.conf.php
+# Editor / OS noise
+*~
+*.swp
+.DS_Store
+
+# Autotools generated files (root)
 /aclocal.m4
-/autom4te.cache
-/COPYING
+/autom4te.cache/
 /compile
-/conf/*.user
-/conf/ca_cert.pem
-/conf/lbbs.logrotate
-/conf/lbbs.logrotate~
-/conf/lbbs.service
-/conf/lbbs.service~
 /config.guess
 /config.h
 /config.h.in
@@ -25,37 +16,85 @@
 /config.sub
 /configure
 /configure~
-/data/*.user
 /depcomp
-/INSTALL
 /install-sh
 /libtool
-/log
 /ltmain.sh
-/m4
+/m4/
 /missing
 /test-driver
+/COPYING
+/INSTALL
 /NEWS
-/var
-CVS
-.cvsignore
+
+# Autotools generated files (any subdirectory)
 Makefile
 Makefile.in
+Makefile.am~
+.deps/
+.dirstamp
+.libs/
 stamp-h1
-lt-*.c
+stamp-h1~
+*.orig
+*.rej
+
+# libtool helper sources
+lt_*.c
 *_ltshwrapper
-*.o
-*.Po
-*.Plo
-*.a
+*.lo
 *.la
 *.lai
+
+# Compiled objects and shared libraries
+*.o
+*.a
 *.so
 *.so.*
-*.lo
-*.Tpo
 *.exe
-/src/bbsd
-/src/test_*
-!/src/test_*.c
-/src/test-suite.log
+*.Tpo
+*.Po
+*.Plo
+
+# Generated conf / logrotate / systemd unit files (from .in templates)
+conf/lbbs.logrotate
+conf/lbbs.service
+conf/lbbs.service~
+conf/lbbs.logrotate~
+
+# Runtime state and per-user config overrides
+/build
+/log
+/var
+conf/*.user
+data/*.user
+
+# Secrets / local overrides
+conf/bbsd.conf
+conf/bbsnet.conf
+conf/badwords.conf
+conf/ca_cert.pem
+conf/ssh_host_rsa_key*
+conf/ssh_host_ed25519_key*
+conf/ssh_host_ecdsa_key*
+utils/conf/db_conn.conf.php
+
+# Distribution artifacts from `make dist` / `make distcheck`
+/lbbs-*/
+/lbbs-*.tar.gz
+/lbbs-*.tar.bz2
+/lbbs-*.tar.xz
+*.rpm
+*.deb
+
+# Installed daemon binary
+src/bbsd
+
+# Test tree: only track sources; ignore build & runtime artifacts
+/tests/*
+!/tests/Makefile.am
+!/tests/test_*.c
+
+# Legacy VCS
+CVS
+.cvsignore
