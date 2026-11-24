@@ -3,7 +3,7 @@ FROM ubuntu:26.04 AS builder
 
 RUN apt-get update && apt-get install -y \
     gcc make gdb autoconf automake libtool pkg-config \
-    libssh-dev libpcre2-dev libmariadb-dev libsystemd-dev \
+    libssh-dev libpcre2-dev libmariadb-dev libsystemd-dev systemd-dev \
     php-cli php-mysql \
     && rm -rf /var/lib/apt/lists/*
 

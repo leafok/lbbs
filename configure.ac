@@ -69,6 +69,27 @@ AS_IF([test "x$enable_systemd" = xyes],
                          [AC_CHECK_HEADERS([systemd/sd-daemon.h], [], [AC_MSG_ERROR([systemd/sd-daemon.h not found.])])], 
                          [AC_MSG_NOTICE([libsystemd not found.])])])
 
+AC_ARG_WITH([systemdsystemunitdir],
+            [AS_HELP_STRING([--with-systemdsystemunitdir=DIR],
+                            [directory for the systemd unit file])],
+            [SYSTEMD_UNIT_DIR=$withval],
+            [AS_IF([test "x$enable_systemd" = xyes],
+                   [SYSTEMD_UNIT_DIR=$($PKG_CONFIG --variable=systemdsystemunitdir libsystemd 2>/dev/null)
+                    AS_IF([test -z "$SYSTEMD_UNIT_DIR"],
+                          [SYSTEMD_UNIT_DIR=$($PKG_CONFIG --variable=systemdsystemunitdir systemd 2>/dev/null)])
+                    AS_IF([test -z "$SYSTEMD_UNIT_DIR"],
+                          [AC_MSG_NOTICE([systemd.pc not found (install systemd-dev/systemd-devel); falling back to ${sysconfdir}/systemd/system])
+                           SYSTEMD_UNIT_DIR='${sysconfdir}/systemd/system'])],
+                   [SYSTEMD_UNIT_DIR=""])])
+AC_SUBST([SYSTEMD_UNIT_DIR])
+
+AC_ARG_WITH([logrotatedir],
+            [AS_HELP_STRING([--with-logrotatedir=DIR],
+                            [directory for the logrotate drop-in])],
+            [LOGROTATE_DIR=$withval],
+            [LOGROTATE_DIR=/etc/logrotate.d])
+AC_SUBST([LOGROTATE_DIR])
+
 AS_IF([test "x$with_epoll" = xyes],
       [AC_CHECK_HEADERS([sys/epoll.h], [], [AC_MSG_ERROR([sys/epoll.h not found.])])],
       [AC_CHECK_HEADERS([poll.h], [], [AC_MSG_ERROR([poll.h not found.])])])

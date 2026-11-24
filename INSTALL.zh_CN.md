@@ -22,7 +22,7 @@
 
 **Debian / Ubuntu：**
 ```bash
-sudo apt-get install -y gcc make autoconf automake libtool pkg-config libpcre2-dev libssh-dev libsystemd-dev libmysqlclient-dev
+sudo apt-get install -y gcc make autoconf automake libtool pkg-config libpcre2-dev libssh-dev libsystemd-dev libmysqlclient-dev systemd-dev
 ```
 
 **MSYS2 with MinGW-w64 工具链：**
@@ -132,15 +132,22 @@ sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
 ## 11. （可选）设置 systemd
 
-从 `conf/lbbs.service` 中的示例创建您自己的 `/usr/lib/systemd/system/lbbs.service`，并进行任何必要的更改。
+`make install` 会将完成变量替换后的 `lbbs.service` 安装到 configure 阶段探测到的 systemd unit 目录。pkg-config 从 `systemd.pc` 读取该路径；未安装时 configure 会输出提示并回退到 `${sysconfdir}/systemd/system`。可通过 `--with-systemdsystemunitdir=DIR` 覆盖目标路径，或使用 `--disable-systemd` 跳过安装。
 
-重新加载守护进程配置并启动服务。
+安装前请检查 unit 文件内容，随后重新加载守护进程配置并启动服务：
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now lbbs.service
+```
 
 ## 12. （可选）设置 logrotate
 
-从 `conf/lbbs.logrotate` 中的示例创建您自己的 `/etc/logrotate.d/lbbs`，并进行任何必要的更改。
+`make install` 会将完成变量替换后的 `lbbs.logrotate` 安装为 `/etc/logrotate.d/lbbs`。如果 logrotate 使用其它路径，可通过 `--with-logrotatedir=DIR` 覆盖。
 
-重新启动 logrotate 服务。
+检查 drop-in 文件后重启 logrotate：
+```bash
+sudo systemctl restart logrotate.service
+```
 
 ## 13. 服务异常终止时的清理
 

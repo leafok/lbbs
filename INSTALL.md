@@ -22,7 +22,7 @@ It is highly recommended to complete the web version configuration steps first a
 
 **Debian / Ubuntu:**
 ```bash
-sudo apt-get install -y gcc make autoconf automake libtool pkg-config libpcre2-dev libssh-dev libsystemd-dev libmysqlclient-dev
+sudo apt-get install -y gcc make autoconf automake libtool pkg-config libpcre2-dev libssh-dev libsystemd-dev libmysqlclient-dev systemd-dev
 ```
 
 **MSYS2 with MinGW-w64 toolchain:**
@@ -132,15 +132,22 @@ sudo -u bbs $LBBS_HOME_DIR/bin/bbsd
 
 ## 11. (Optional) Set Up systemd
 
-Create your own `/usr/lib/systemd/system/lbbs.service` from the sample at `conf/lbbs.service`, and make any necessary changes.
+`make install` drops the substituted `lbbs.service` into the systemd unit directory detected at configure time. pkg-config reads `systemd.pc`; when that package is missing, configure falls back to `${sysconfdir}/systemd/system` and prints a notice. Override the destination with `--with-systemdsystemunitdir=DIR`, or skip the install entirely with `--disable-systemd`.
 
-Reload daemon configuration and start the service.
+Review the installed unit before enabling it, then reload the daemon and start the service:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now lbbs.service
+```
 
 ## 12. (Optional) Set Up logrotate
 
-Create your own `/etc/logrotate.d/lbbs` from the sample at `conf/lbbs.logrotate`, and make any necessary changes.
+`make install` drops the substituted `lbbs.logrotate` as `/etc/logrotate.d/lbbs`. Override with `--with-logrotatedir=DIR` if your logrotate uses a different path.
 
-Restart the logrotate service.
+Review the drop-in, then restart logrotate:
+```bash
+sudo systemctl restart logrotate.service
+```
 
 ## 13. Cleanup on Abnormal Service Termination
 
