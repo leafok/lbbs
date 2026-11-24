@@ -27,7 +27,7 @@ sudo apt-get install -y gcc make autoconf automake libtool pkg-config libpcre2-d
 
 **MSYS2 with MinGW-w64 工具链：**
 ```bash
-pacman -S --needed msys2-runtime-devel libssh libssh-devel pcre2-devel mingw-w64-x86_64-libiconv mingw-w64-x86_64-libmariadbclient
+pacman -S --needed msys2-runtime-devel libssh libssh-devel pcre2-devel libiconv libiconv-devel mingw-w64-x86_64-libmariadbclient
 ```
 
 ## 2. 提取源代码文件
@@ -52,7 +52,8 @@ export LBBS_HOME_DIR=/usr/local/lbbs
 
 **对于 MSYS2 with MinGW-w64 工具链：**
 ```bash
-./configure --prefix=$LBBS_HOME_DIR --disable-shared PKG_CONFIG_PATH=/mingw64/lib/pkgconfig/
+./configure --prefix=$LBBS_HOME_DIR --disable-shared
+PKG_CONFIG_PATH=/mingw64/lib/pkgconfig/ ICONV_CFLAGS="-I/usr/include" ICONV_LIBS="/usr/lib/libiconv.dll.a"
 ```
 
 ```bash
