@@ -12,6 +12,7 @@
 
 #include "common.h"
 #include "log.h"
+#include "shm_name.h"
 #include "trie_dict.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -37,7 +38,6 @@ static TRIE_NODE_POOL *p_trie_node_pool;
 
 int trie_dict_init(const char *filename, int node_count_limit)
 {
-	char filepath[FILE_PATH_LEN];
 	int fd;
 	size_t size;
 	void *p_shm;
@@ -65,9 +65,7 @@ int trie_dict_init(const char *filename, int node_count_limit)
 	// Allocate shared memory
 	size = sizeof(TRIE_NODE_POOL) + sizeof(TRIE_NODE) * (size_t)node_count_limit;
 
-	strncpy(filepath, filename, sizeof(filepath) - 1);
-	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(trie_node_shm_name, sizeof(trie_node_shm_name), "/TRIE_DICT_SHM_%s", basename(filepath));
+	shm_name_set(trie_node_shm_name, sizeof(trie_node_shm_name), "TRIE_DICT_SHM", filename);
 
 	if (shm_unlink(trie_node_shm_name) == -1 && errno != ENOENT)
 	{

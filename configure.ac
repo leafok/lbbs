@@ -48,12 +48,19 @@ PKG_CHECK_MODULES([LIBSSH], [libssh], [], [AC_MSG_ERROR([libssh is required.])])
 PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8], [], [AC_MSG_ERROR([libpcre2-8 is required.])])
 
 AS_IF([test "x$with_sysv" = xyes],
-      [AC_CHECK_FUNC([semtimedop],
-      [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available])],
+      [AC_CHECK_FUNC([semop],
+      [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available])
+       AC_CHECK_FUNC([semtimedop],
+       [AC_DEFINE([HAVE_SEMTIMEDOP], [1], [Define if semtimedop() is available])])],
       [with_sysv="no"])])
 
 AS_IF([test "x$with_iconv" != xno],
-      [PKG_CHECK_MODULES([ICONV], [iconv], [], [AC_CHECK_HEADERS([iconv.h], [], [AC_MSG_ERROR([iconv is required.])])])])
+      [PKG_CHECK_MODULES([ICONV], [iconv], [],
+                         [AC_CHECK_HEADERS([iconv.h], [], [AC_MSG_ERROR([iconv is required.])])
+                          dnl iconv() is part of libc on glibc, macOS keeps it in libiconv
+                          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <iconv.h>]],
+                                                           [[iconv_open("UTF-8", "ISO-8859-1");]])],
+                                         [], [ICONV_LIBS="-liconv"])])])
 
 AS_IF([test "x$with_mariadb" = xyes],
       [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb],

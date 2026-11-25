@@ -10,13 +10,15 @@
 #include "config.h"
 #endif
 
+#include "lbbs_sem.h"
 #include "log.h"
 #include "section_list.h"
+#include "shm_name.h"
 #include "trie_dict.h"
 #include "user_list.h"
 #include <errno.h>
 #include <fcntl.h>
-#include <libgen.h>
+#include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,9 +111,7 @@ int article_block_init(const char *filename, int block_count)
 		return -2;
 	}
 
-	strncpy(filepath, filename, sizeof(filepath) - 1);
-	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(article_block_shm_name, sizeof(article_block_shm_name), "/ARTICLE_BLOCK_SHM_%s", basename(filepath));
+	shm_name_set(article_block_shm_name, sizeof(article_block_shm_name), "ARTICLE_BLOCK_SHM", filename);
 
 	// Allocate shared memory
 	size = sizeof(ARTICLE_BLOCK_POOL);
@@ -449,7 +449,6 @@ ARTICLE *article_block_find_by_index(int index)
 
 extern int section_list_init(const char *filename)
 {
-	char filepath[FILE_PATH_LEN];
 	int fd;
 	size_t size;
 	void *p_shm;
@@ -469,9 +468,7 @@ extern int section_list_init(const char *filename)
 	// Allocate shared memory
 	size = sizeof(SECTION_LIST_POOL);
 
-	strncpy(filepath, filename, sizeof(filepath) - 1);
-	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(section_list_shm_name, sizeof(section_list_shm_name), "/SECTION_LIST_SHM_%s", basename(filepath));
+	shm_name_set(section_list_shm_name, sizeof(section_list_shm_name), "SECTION_LIST_SHM", filename);
 
 	if (shm_unlink(section_list_shm_name) == -1 && errno != ENOENT)
 	{
@@ -513,7 +510,7 @@ extern int section_list_init(const char *filename)
 #ifndef HAVE_SYSTEM_V
 	for (i = 0; i <= BBS_max_section; i++)
 	{
-		if (sem_init(&(p_section_list_pool->sem[i]), 1, 1) == -1)
+		if (lbbs_sem_init(&(p_section_list_pool->sem[i]), 1, 1) == -1)
 		{
 			log_error("sem_init(sem[%d]) error (%d)", i, errno);
 			return -3;
@@ -597,7 +594,7 @@ void section_list_cleanup(void)
 #else
 	for (int i = 0; i <= BBS_max_section; i++)
 	{
-		if (sem_destroy(&(p_section_list_pool->sem[i])) == -1)
+		if (lbbs_sem_destroy(&(p_section_list_pool->sem[i])) == -1)
 		{
 			log_error("sem_destroy(sem[%d]) error (%d)", i, errno);
 		}
@@ -732,7 +729,7 @@ int section_list_update(SECTION_LIST *p_section, const char *sname, const char *
 
 	if (trie_dict_set(p_section_list_pool->p_trie_dict_section_by_name, sname, index) < 0)
 	{
-		log_error("trie_dict_set(section, %s, %ld) error", sname, index);
+		log_error("trie_dict_set(section, %s, %" PRId64 ") error", sname, index);
 		return -2;
 	}
 
@@ -1754,13 +1751,13 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 		sops[3].sem_flg = SEM_UNDO;			   // undo on terminate
 	}
 
-	ret = semtimedop(p_section_list_pool->semid, sops, (index == BBS_max_section ? 2 : 4), &timeout);
+	ret = lbbs_semtimedop(p_section_list_pool->semid, sops, (index == BBS_max_section ? 2 : 4), &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(index = %d, lock read) error %d", index, errno);
 	}
 #else
-	if (sem_timedwait(&(p_section_list_pool->sem[index]), &timeout) == -1)
+	if (lbbs_sem_timedwait(&(p_section_list_pool->sem[index]), &timeout) == -1)
 	{
 		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 		{
@@ -1771,7 +1768,7 @@ int section_list_try_rd_lock(SECTION_LIST *p_section, int wait_sec)
 
 	if (index != BBS_max_section)
 	{
-		if (sem_timedwait(&(p_section_list_pool->sem[BBS_max_section]), &timeout) == -1)
+		if (lbbs_sem_timedwait(&(p_section_list_pool->sem[BBS_max_section]), &timeout) == -1)
 		{
 			if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 			{
@@ -1852,13 +1849,13 @@ int section_list_try_rw_lock(SECTION_LIST *p_section, int wait_sec)
 	sops[2].sem_op = 0;							   // wait until unlocked
 	sops[2].sem_flg = 0;
 
-	ret = semtimedop(p_section_list_pool->semid, sops, 3, &timeout);
+	ret = lbbs_semtimedop(p_section_list_pool->semid, sops, 3, &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(index = %d, lock write) error %d", index, errno);
 	}
 #else
-	if (sem_timedwait(&(p_section_list_pool->sem[index]), &timeout) == -1)
+	if (lbbs_sem_timedwait(&(p_section_list_pool->sem[index]), &timeout) == -1)
 	{
 		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 		{
@@ -2152,7 +2149,7 @@ int section_list_reset_lock(SECTION_LIST *p_section)
 		return -2;
 	}
 
-	if (sem_destroy(&(p_section_list_pool->sem[index])) == -1)
+	if (lbbs_sem_destroy(&(p_section_list_pool->sem[index])) == -1)
 	{
 		log_error("sem_destroy(sem[%d]) error (%d)", index, errno);
 	}
@@ -2160,14 +2157,14 @@ int section_list_reset_lock(SECTION_LIST *p_section)
 	p_section_list_pool->read_lock_count[index] = 0;
 	p_section_list_pool->write_lock_count[index] = 0;
 
-	if (sem_init(&(p_section_list_pool->sem[index]), 1, 1) == -1)
+	if (lbbs_sem_init(&(p_section_list_pool->sem[index]), 1, 1) == -1)
 	{
 		log_error("sem_init(sem[%d]) error (%d)", index, errno);
 	}
 
 	if (index != BBS_max_section)
 	{
-		if (sem_destroy(&(p_section_list_pool->sem[BBS_max_section])) == -1)
+		if (lbbs_sem_destroy(&(p_section_list_pool->sem[BBS_max_section])) == -1)
 		{
 			log_error("sem_destroy(sem[%d]) error (%d)", BBS_max_section, errno);
 		}
@@ -2175,7 +2172,7 @@ int section_list_reset_lock(SECTION_LIST *p_section)
 		p_section_list_pool->read_lock_count[BBS_max_section] = 0;
 		p_section_list_pool->write_lock_count[BBS_max_section] = 0;
 
-		if (sem_init(&(p_section_list_pool->sem[BBS_max_section]), 1, 1) == -1)
+		if (lbbs_sem_init(&(p_section_list_pool->sem[BBS_max_section]), 1, 1) == -1)
 		{
 			log_error("sem_init(sem[%d]) error (%d)", BBS_max_section, errno);
 		}

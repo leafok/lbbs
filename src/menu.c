@@ -18,12 +18,12 @@
 #include "log.h"
 #include "menu.h"
 #include "screen.h"
+#include "shm_name.h"
 #include "user_priv.h"
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
-#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,6 +35,17 @@ enum _menu_constant_t
 {
 	MENU_SET_RESERVED_LENGTH = sizeof(int16_t) * 4,
 };
+
+// The layout itself decides how long the mapping is: fstat() reports a shared memory
+// object rounded up to whole pages on macOS, which is longer than what was allocated.
+static size_t menu_shm_size(void)
+{
+	return MENU_SET_RESERVED_LENGTH +
+		   sizeof(MENU) * MAX_MENUS +
+		   sizeof(MENU_ITEM) * MAX_MENUITEMS +
+		   sizeof(MENU_SCREEN) * MAX_MENUS +
+		   MAX_MENU_SCR_BUF_LENGTH * MAX_MENUS;
+}
 
 static const char MENU_CONF_DELIM_WITH_SPACE[] = " ,\t\r\n";
 static const char MENU_CONF_DELIM_WITHOUT_SPACE[] = "\r\n";
@@ -50,7 +61,6 @@ extern inline MENU_SCREEN *get_menu_screen_by_id(MENU_SET *p_menu_set, MENU_SCRE
 
 int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 {
-	char filepath[FILE_PATH_LEN];
 	int fd;
 	size_t size;
 	void *p_shm;
@@ -109,15 +119,9 @@ int load_menu(MENU_SET *p_menu_set, const char *conf_file)
 	}
 
 	// Allocate shared memory
-	size = MENU_SET_RESERVED_LENGTH +
-		   sizeof(MENU) * MAX_MENUS +
-		   sizeof(MENU_ITEM) * MAX_MENUITEMS +
-		   sizeof(MENU_SCREEN) * MAX_MENUS +
-		   MAX_MENU_SCR_BUF_LENGTH * MAX_MENUS;
+	size = menu_shm_size();
 
-	strncpy(filepath, conf_file, sizeof(filepath) - 1);
-	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(p_menu_set->shm_name, sizeof(p_menu_set->shm_name), "/MENU_SHM_%s", basename(filepath));
+	shm_name_set(p_menu_set->shm_name, sizeof(p_menu_set->shm_name), "MENU_SHM", conf_file);
 
 	if (shm_unlink(p_menu_set->shm_name) == -1 && errno != ENOENT)
 	{
@@ -1549,7 +1553,13 @@ int get_menu_shm_readonly(MENU_SET *p_menu_set)
 		return -2;
 	}
 
-	size = (size_t)sb.st_size;
+	size = menu_shm_size();
+	if ((size_t)sb.st_size < size)
+	{
+		log_error("shared memory(%s) size(%lld) error: less than %zu", p_menu_set->shm_name, (long long)sb.st_size, size);
+		close(fd);
+		return -2;
+	}
 
 	p_shm = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0L);
 	if (p_shm == MAP_FAILED)

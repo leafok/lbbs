@@ -1785,8 +1785,8 @@ static void test_display_line_limit(void)
 // is answered with a return of 0.
 static void test_last_line_reserve(void)
 {
-	static char text[MAX_EDITOR_DATA_LINES + SCREEN_COLS + 2];
-	static char expect[MAX_EDITOR_DATA_LINES + SCREEN_COLS + 2];
+	static char text[MAX_EDITOR_DATA_LINES + (int)SCREEN_COLS + 2];
+	static char expect[MAX_EDITOR_DATA_LINES + (int)SCREEN_COLS + 2];
 	char cut[SCREEN_COLS + 2];
 	EDITOR_DATA *p_ed;
 	long display_line;
@@ -1950,7 +1950,7 @@ static void test_last_line_reserve(void)
 
 	fill_chars(expect + MAX_EDITOR_DATA_LINES - 1, (size_t)SCREEN_COLS, 'x');
 	expect[MAX_EDITOR_DATA_LINES - 1 + SCREEN_COLS] = 'w';
-	expect[MAX_EDITOR_DATA_LINES + SCREEN_COLS] = '\0';
+	expect[MAX_EDITOR_DATA_LINES + (int)SCREEN_COLS] = '\0';
 	check_str(save_joined(p_ed, "the round trip of the wrapped short document"), expect,
 			"the wrap keeps every character of the document");
 	editor_data_cleanup(p_ed);

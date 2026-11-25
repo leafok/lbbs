@@ -379,6 +379,24 @@ static int count_mappings(const char *name)
 	return count;
 }
 
+// /proc/self/maps only exists on Linux, so the mapping counts cannot be measured there
+static void check_mappings(const char *name, int expected, const char *msg)
+{
+	FILE *f;
+
+	f = fopen("/proc/self/maps", "r");
+	if (f == NULL)
+	{
+		printf("SKIP: %s\n", msg);
+
+		return;
+	}
+
+	fclose(f);
+
+	check_int(count_mappings(name), expected, msg);
+}
+
 static void fill_chars(char *dst, int n, char c)
 {
 	int i;
@@ -559,7 +577,12 @@ static void test_load_main(void)
 	check_int(ms_main.allow_exit, 0, "allow_exit");
 
 	// The object is named after the config file, which is how a child process finds it
+#if defined(__APPLE__)
+	// macOS only accepts the first 31 characters of a shared memory name, so the file name is hashed there
+	check_true(strncmp(ms_main.shm_name, "/LBBS_", 6) == 0 && strlen(ms_main.shm_name) <= 31, "shm_name");
+#else
 	check_str(ms_main.shm_name, "/MENU_SHM_~test_menu_main.conf", "shm_name");
+#endif
 
 	check_int((long)ms_main.shm_size,
 			  (long)(sizeof(int16_t) * 4 + sizeof(MENU) * MAX_MENUS + sizeof(MENU_ITEM) * MAX_MENUITEMS +
@@ -1449,14 +1472,14 @@ static void test_hardening(void)
 	{
 		memset(&ms, 0, sizeof(ms));
 		check_int(load_menu(&ms, path), 0, "load_menu() of the config to reload");
-		check_int(count_mappings(ms.shm_name), 1, "the loaded config is mapped once");
+		check_mappings(ms.shm_name, 1, "the loaded config is mapped once");
 		check_int(load_menu(&ms, path), 0, "load_menu() of the same set a second time");
-		check_int(count_mappings(ms.shm_name), 1, "the reload replaced the mapping of the first load");
+		check_mappings(ms.shm_name, 1, "the reload replaced the mapping of the first load");
 		p_menu = get_menu_by_id(&ms, 0);
 		check_record(p_menu, "the menu of the reloaded set");
 		check_str(rec_str(p_menu, name), "MENU1", "the reloaded set has the same menus");
 		check_int(unload_menu(&ms), 0, "unload_menu() of the reloaded set");
-		check_int(count_mappings(ms.shm_name), 0, "the reloaded set leaves no mapping behind");
+		check_mappings(ms.shm_name, 0, "the reloaded set leaves no mapping behind");
 		unlink(path);
 	}
 

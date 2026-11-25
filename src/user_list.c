@@ -12,7 +12,9 @@
 
 #include "common.h"
 #include "database.h"
+#include "lbbs_sem.h"
 #include "log.h"
+#include "shm_name.h"
 #include "trie_dict.h"
 #include "user_list.h"
 #include "user_stat.h"
@@ -406,7 +408,6 @@ int user_login_count_load(MYSQL *db)
 
 int user_list_pool_init(const char *filename)
 {
-	char filepath[FILE_PATH_LEN];
 	int fd;
 	size_t size;
 	void *p_shm;
@@ -442,9 +443,7 @@ int user_list_pool_init(const char *filename)
 	// Allocate shared memory
 	size = sizeof(USER_LIST_POOL);
 
-	strncpy(filepath, filename, sizeof(filepath) - 1);
-	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(user_list_shm_name, sizeof(user_list_shm_name), "/USER_LIST_SHM_%s", basename(filepath));
+	shm_name_set(user_list_shm_name, sizeof(user_list_shm_name), "USER_LIST_SHM", filename);
 
 	if (shm_unlink(user_list_shm_name) == -1 && errno != ENOENT)
 	{
@@ -483,7 +482,7 @@ int user_list_pool_init(const char *filename)
 
 	// Allocate semaphore as user list pool lock
 #ifndef HAVE_SYSTEM_V
-	if (sem_init(&(p_user_list_pool->sem), 1, 1) == -1)
+	if (lbbs_sem_init(&(p_user_list_pool->sem), 1, 1) == -1)
 	{
 		log_error("sem_init() error (%d)", errno);
 		return -3;
@@ -550,7 +549,7 @@ void user_list_pool_cleanup(void)
 		log_error("semctl(semid = %d, IPC_RMID) error (%d)", p_user_list_pool->semid, errno);
 	}
 #else
-	if (sem_destroy(&(p_user_list_pool->sem)) == -1)
+	if (lbbs_sem_destroy(&(p_user_list_pool->sem)) == -1)
 	{
 		log_error("sem_destroy() error (%d)", errno);
 	}
@@ -706,13 +705,13 @@ int user_list_try_rd_lock(int wait_sec)
 	sops[1].sem_op = 1;			// lock
 	sops[1].sem_flg = SEM_UNDO; // undo on terminate
 
-	ret = semtimedop(p_user_list_pool->semid, sops, 2, &timeout);
+	ret = lbbs_semtimedop(p_user_list_pool->semid, sops, 2, &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(lock read) error %d", errno);
 	}
 #else
-	if (sem_timedwait(&(p_user_list_pool->sem), &timeout) == -1)
+	if (lbbs_sem_timedwait(&(p_user_list_pool->sem), &timeout) == -1)
 	{
 		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 		{
@@ -771,13 +770,13 @@ int user_list_try_rw_lock(int wait_sec)
 	sops[2].sem_op = 0;	 // wait until unlocked
 	sops[2].sem_flg = 0;
 
-	ret = semtimedop(p_user_list_pool->semid, sops, 3, &timeout);
+	ret = lbbs_semtimedop(p_user_list_pool->semid, sops, 3, &timeout);
 	if (ret == -1 && errno != EAGAIN && errno != EINTR)
 	{
 		log_error("semop(lock write) error %d", errno);
 	}
 #else
-	if (sem_timedwait(&(p_user_list_pool->sem), &timeout) == -1)
+	if (lbbs_sem_timedwait(&(p_user_list_pool->sem), &timeout) == -1)
 	{
 		if (errno != ETIMEDOUT && errno != EAGAIN && errno != EINTR)
 		{
@@ -1015,7 +1014,7 @@ int user_list_reset_lock(void)
 		return -1;
 	}
 
-	if (sem_destroy(&(p_user_list_pool->sem)) == -1)
+	if (lbbs_sem_destroy(&(p_user_list_pool->sem)) == -1)
 	{
 		log_error("sem_destroy() error (%d)", errno);
 	}
@@ -1023,7 +1022,7 @@ int user_list_reset_lock(void)
 	p_user_list_pool->read_lock_count = 0;
 	p_user_list_pool->write_lock_count = 0;
 
-	if (sem_init(&(p_user_list_pool->sem), 1, 1) == -1)
+	if (lbbs_sem_init(&(p_user_list_pool->sem), 1, 1) == -1)
 	{
 		log_error("sem_init() error (%d)", errno);
 	}

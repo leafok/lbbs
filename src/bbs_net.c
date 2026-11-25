@@ -21,6 +21,7 @@
 #include "str_process.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <netdb.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -199,7 +200,7 @@ static int load_bbsnet_conf(const char *file_config)
 		p_menu_item = get_menu_item_by_id(&bbsnet_menu, menu_item_id);
 		if (p_menu_item == NULL)
 		{
-			log_error("get_menu_item_by_id(%lu) error: NULL pointer", menu_item_id);
+			log_error("get_menu_item_by_id(%" PRIu64 ") error: NULL pointer", menu_item_id);
 			fclose(fin);
 			unload_bbsnet_conf();
 			return -3;

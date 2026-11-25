@@ -12,10 +12,10 @@
 
 #include "file_loader.h"
 #include "log.h"
+#include "shm_name.h"
 #include "str_process.h"
 #include <errno.h>
 #include <fcntl.h>
-#include <libgen.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -39,7 +39,6 @@ static inline size_t shm_offsets_offset(size_t data_len)
 
 int load_file(const char *filename)
 {
-	char filepath[FILE_PATH_LEN];
 	char shm_name[FILE_NAME_LEN];
 	int fd;
 	struct stat sb;
@@ -90,9 +89,7 @@ int load_file(const char *filename)
 	// Allocate shared memory
 	size = shm_offsets_offset(data_len) + sizeof(long) * (size_t)(line_total + 1);
 
-	strncpy(filepath, filename, sizeof(filepath) - 1);
-	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(shm_name, sizeof(shm_name), "/FILE_SHM_%s", basename(filepath));
+	shm_name_set(shm_name, sizeof(shm_name), "FILE_SHM", filename);
 
 	if (shm_unlink(shm_name) == -1 && errno != ENOENT)
 	{
@@ -152,7 +149,6 @@ int load_file(const char *filename)
 
 int unload_file(const char *filename)
 {
-	char filepath[FILE_PATH_LEN];
 	char shm_name[FILE_NAME_LEN];
 
 	if (filename == NULL)
@@ -161,9 +157,7 @@ int unload_file(const char *filename)
 		return -1;
 	}
 
-	strncpy(filepath, filename, sizeof(filepath) - 1);
-	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(shm_name, sizeof(shm_name), "/FILE_SHM_%s", basename(filepath));
+	shm_name_set(shm_name, sizeof(shm_name), "FILE_SHM", filename);
 
 	if (shm_unlink(shm_name) == -1 && errno != ENOENT)
 	{
@@ -176,7 +170,6 @@ int unload_file(const char *filename)
 
 void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long *p_line_total, const void **pp_data, const long **pp_line_offsets)
 {
-	char filepath[FILE_PATH_LEN];
 	char shm_name[FILE_NAME_LEN];
 	int fd;
 	void *p_shm = NULL;
@@ -189,9 +182,7 @@ void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long *p_li
 		return NULL;
 	}
 
-	strncpy(filepath, filename, sizeof(filepath) - 1);
-	filepath[sizeof(filepath) - 1] = '\0';
-	snprintf(shm_name, sizeof(shm_name), "/FILE_SHM_%s", basename(filepath));
+	shm_name_set(shm_name, sizeof(shm_name), "FILE_SHM", filename);
 
 	if ((fd = shm_open(shm_name, O_RDONLY, 0600)) == -1)
 	{
@@ -222,9 +213,11 @@ void *get_file_shm_readonly(const char *filename, size_t *p_data_len, long *p_li
 		return NULL;
 	}
 
-	if (((struct shm_header_t *)p_shm)->shm_size != size)
+	// The header records the length that was allocated, while fstat() on macOS reports
+	// the object rounded up to whole pages, so only a shorter object is a real mismatch.
+	if (size < ((struct shm_header_t *)p_shm)->shm_size)
 	{
-		log_error("Shared memory size mismatch (%ld != %ld)", ((struct shm_header_t *)p_shm)->shm_size, size);
+		log_error("Shared memory size mismatch (%lld < %lld)", (long long)size, (long long)((struct shm_header_t *)p_shm)->shm_size);
 		munmap(p_shm, size);
 		return NULL;
 	}
