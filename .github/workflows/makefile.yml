@@ -16,19 +16,40 @@ concurrency:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-latest
+          # arm64 (Apple Silicon) image, so the macOS code paths get compiled and tested natively
+          - name: macos-arm64
+            os: macos-26
 
     steps:
     - uses: actions/checkout@v6
 
-    - name: autogen
-      run: autoreconf --install --force
-
-    - name: Install dependencies
+    - name: Install dependencies (Linux)
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y gcc make autoconf automake libtool pkg-config libpcre2-dev libssh-dev libsystemd-dev libmysqlclient-dev systemd-dev
-          
+
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install autoconf automake libtool pkgconf libssh pcre2 mysql-client@8.4
+
+    # mysql-client@8.4 is keg-only, so configure only finds mysqlclient.pc through its prefix
+    - name: Set up pkg-config path (macOS)
+      if: runner.os == 'macOS'
+      run: echo "PKG_CONFIG_PATH=$(brew --prefix mysql-client@8.4)/lib/pkgconfig:$(brew --prefix libssh)/lib/pkgconfig:$(brew --prefix pcre2)/lib/pkgconfig" >> "$GITHUB_ENV"
+
+    - name: autogen
+      run: autoreconf --install --force
+
     - name: configure
       run: ./configure
 
@@ -37,3 +58,7 @@ jobs:
 
     - name: Run check
       run: make check
+
+    - name: Show config.log on failure
+      if: failure()
+      run: cat config.log
