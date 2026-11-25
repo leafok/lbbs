@@ -1,12 +1,3 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# GitHub recommends pinning actions to a commit SHA.
-# To get a newer version, you will need to update the SHA.
-# You can also reference a tag or branch, but the action may change without warning.
-
 name: Publish Docker image
 
 on:
@@ -14,23 +5,42 @@ on:
     tags:
       - "v*.*.*"
 
+# Each platform is uploaded as a separate manifest, so cancelling halfway through
+# would leave the tag pointing at an incomplete manifest list
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
-  DOCKERHUB_PLATFORMS: linux/amd64,linux/arm64
+  # the namespace must be the account the token belongs to, which need not be the GitHub owner
   BBSD_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/lbbs-bbsd
 
 jobs:
-  push_to_registry:
-    name: Push Docker image to Docker Hub
-    runs-on: ubuntu-latest
+
+  # One native runner per architecture, so the arm64 toolchain is never emulated: under
+  # QEMU the make stage alone took 325s against 19s on amd64, and the two platforms now
+  # build in parallel instead of one after the other in a ~16 minute single job.
+  build:
+
+    name: ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+
     permissions:
-      packages: write
       contents: read
       attestations: write
-      id-token: write
+      id-token: write # Required by the provenance and SBOM attestations
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-26.04-arm
+
     steps:
       - name: Check out the repo
         uses: actions/checkout@v6
@@ -41,9 +51,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -52,21 +59,65 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.BBSD_IMAGE }}
+          # the per-platform tag that the publish job merges into the release tags
+          tags: |
+            type=raw,value=${{ github.ref_name }}-${{ matrix.arch }}
 
-      - name: Build and push Docker image
-        id: push-bbsd
+      - name: Build and push the platform image
         uses: docker/build-push-action@v7
         with:
-          platforms: ${{ env.DOCKERHUB_PLATFORMS }}
+          platforms: ${{ matrix.platform }}
           context: .
           file: ./Dockerfile/dockerfile.bbsd
           push: true
-          provenance: true
+          # min attests the exported image only; max also records every internal buildx
+          # step as a subject, which for this build is the whole compile
+          provenance: mode=min
           sbom: true
-          tags: |
-            ${{ env.BBSD_IMAGE }}:${{ github.ref_name }}
-            ${{ env.BBSD_IMAGE }}:latest
-            ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha # Pull cache from GitHub Actions cache
-          cache-to: type=gha,mode=max # Push cache to GitHub Actions cache
+          # scope keeps the layers of the two architectures from evicting each other
+          cache-from: type=gha,scope=bbsd-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=bbsd-${{ matrix.arch }}
+
+  publish:
+    name: Publish the manifest list
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.BBSD_IMAGE }}
+          # v1.8.0 becomes 1.8.0 and 1.8, plus the commit and the moving latest
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+            type=raw,value=latest
+
+      - name: Merge the platform images
+        run: |
+          set -eu
+          # the platform manifests are copied unchanged, so the attestations already
+          # pushed for each of their digests stay reachable through the new tags
+          args=()
+          while IFS= read -r tag; do
+          	if [ -n "${tag}" ]; then
+          		args+=(--tag "${tag}")
+          	fi
+          done <<< "${{ steps.meta.outputs.tags }}"
+          for arch in amd64 arm64; do
+          	args+=("${BBSD_IMAGE}:${GITHUB_REF_NAME}-${arch}")
+          done
+          echo "Creating the manifest list from: ${args[*]}"
+          # a tag already pointing at this exact list is a no-op, so re-running is safe
+          docker buildx imagetools create "${args[@]}"
