@@ -57,9 +57,6 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
 
-    env:
-      PACKAGE_ROOT: ${{ runner.temp }}/package
-
     strategy:
       fail-fast: false
       matrix:
@@ -102,6 +99,10 @@ jobs:
 
     - name: Run check
       run: make check
+
+    # the runner context cannot be used in a job level env, so pass the staging dir on to the steps below
+    - name: Set the package root
+      run: echo "PACKAGE_ROOT=$RUNNER_TEMP/package" >> "$GITHUB_ENV"
 
     - name: Stage the installation tree
       run: |
