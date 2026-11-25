@@ -29,7 +29,7 @@
 #include <sys/sem.h>
 #include <sys/stat.h>
 
-#if defined(_SEM_SEMUN_UNDEFINED) || defined(__CYGWIN__)
+#ifdef _SEM_SEMUN_UNDEFINED
 union semun
 {
 	int val;			   /* Value for SETVAL */
@@ -38,7 +38,7 @@ union semun
 	struct seminfo *__buf; /* Buffer for IPC_INFO
 							  (Linux-specific) */
 };
-#endif // #if defined(_SEM_SEMUN_UNDEFINED)
+#endif // #ifdef _SEM_SEMUN_UNDEFINED
 
 enum _section_list_constant_t
 {

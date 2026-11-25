@@ -48,6 +48,14 @@ PKG_CHECK_MODULES([LIBSSH], [libssh], [], [AC_MSG_ERROR([libssh is required.])])
 PKG_CHECK_MODULES([LIBPCRE2], [libpcre2-8], [], [AC_MSG_ERROR([libpcre2-8 is required.])])
 
 AS_IF([test "x$with_sysv" = xyes],
+      [AC_EGREP_CPP([lbbs_cygwin],
+                    [#ifdef __CYGWIN__
+                     lbbs_cygwin
+                     #endif],
+                    [AC_MSG_NOTICE([The Cygwin/MSYS2 runtime stubs out System V IPC, using POSIX semaphores])
+                     with_sysv="no"])])
+
+AS_IF([test "x$with_sysv" = xyes],
       [AC_CHECK_FUNC([semop],
       [AC_DEFINE([HAVE_SYSTEM_V], [1], [Define if System V is available])
        AC_CHECK_FUNC([semtimedop],
