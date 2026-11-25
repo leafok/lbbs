@@ -59,6 +59,24 @@ jobs:
     - name: Run check
       run: make check
 
+    # everything must land inside DESTDIR, run from there, and come back out on uninstall
+    - name: Stage a relocatable install
+      run: |
+        make install-strip DESTDIR="$RUNNER_TEMP/pkg"
+        staged=$(find "$RUNNER_TEMP/pkg" -type f -name bbsd)
+        if [ -z "$staged" ]; then
+        	echo "bbsd was not installed under \$RUNNER_TEMP/pkg" >&2
+        	exit 1
+        fi
+        "$staged" -v
+        make uninstall DESTDIR="$RUNNER_TEMP/pkg"
+        left=$(find "$RUNNER_TEMP/pkg" -type f | wc -l)
+        if [ "$left" -ne 0 ]; then
+        	find "$RUNNER_TEMP/pkg" -type f >&2
+        	echo "make uninstall left $left files behind" >&2
+        	exit 1
+        fi
+
     - name: Show config.log on failure
       if: failure()
       run: cat config.log

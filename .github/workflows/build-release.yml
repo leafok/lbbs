@@ -9,30 +9,193 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  build:
+env:
+  # bbsd resolves conf/ and data/ relative to its own location and the unit file spells
+  # ExecStart=@prefix@/bin/bbsd, so a package only works when unpacked at exactly this prefix
+  INSTALL_PREFIX: /usr/local/lbbs
 
+jobs:
+  source:
+
+    name: source-tarball
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write # Allows the action to create and write to the release
-    
     steps:
     - uses: actions/checkout@v6
-
-    - name: autogen
-      run: autoreconf --install --force
 
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y gcc make autoconf automake libtool pkg-config libpcre2-dev libssh-dev libsystemd-dev libmysqlclient-dev systemd-dev
-          
+
+    - name: autogen
+      run: autoreconf --install --force
+
     - name: configure
       run: ./configure
 
     - name: Run distcheck
       run: make distcheck TESTS=""
+
+    - name: Checksum the tarball
+      run: |
+        for tarball in lbbs-*.tar.gz; do
+        	sha256sum "${tarball}" > "${tarball}.sha256"
+        done
+        ls -l lbbs-*.tar.gz*
+
+    - name: Upload the source tarball
+      uses: actions/upload-artifact@v7
+      with:
+        name: release-source
+        path: |
+          lbbs-*.tar.gz
+          lbbs-*.tar.gz.sha256
+
+  binary:
+
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    env:
+      PACKAGE_ROOT: ${{ runner.temp }}/package
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: ubuntu-latest
+            configure_flags: ""
+          # arm64 (Apple Silicon) image, the same one the Makefile CI job builds on
+          - name: macos-arm64
+            os: macos-26
+            # Darwin has no systemd, and skipping it keeps a dead unit file out of the package
+            configure_flags: "--disable-systemd"
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Install dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc make autoconf automake libtool pkg-config libpcre2-dev libssh-dev libsystemd-dev libmysqlclient-dev systemd-dev
+
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install autoconf automake libtool pkgconf libssh pcre2 mysql-client@8.4
+
+    # mysql-client@8.4 is keg-only, so configure only finds mysqlclient.pc through its prefix
+    - name: Set up pkg-config path (macOS)
+      if: runner.os == 'macOS'
+      run: echo "PKG_CONFIG_PATH=$(brew --prefix mysql-client@8.4)/lib/pkgconfig:$(brew --prefix libssh)/lib/pkgconfig:$(brew --prefix pcre2)/lib/pkgconfig" >> "$GITHUB_ENV"
+
+    - name: autogen
+      run: autoreconf --install --force
+
+    - name: configure
+      run: ./configure --prefix="${INSTALL_PREFIX}" ${{ matrix.configure_flags }}
+
+    - name: Run make
+      run: make
+
+    - name: Run check
+      run: make check
+
+    - name: Stage the installation tree
+      run: |
+        # DESTDIR keeps every installed path under PACKAGE_ROOT, install-strip drops the debug info
+        make install-strip DESTDIR="${PACKAGE_ROOT}"
+        "${PACKAGE_ROOT}${INSTALL_PREFIX}/bin/bbsd" -v
+
+    - name: Pack
+      shell: bash
+      run: |
+        root="${PACKAGE_ROOT}${INSTALL_PREFIX}"
+        version="$(sed -n 's/#define PACKAGE_VERSION "\(.*\)"/\1/p' config.h)"
+        if [ -z "${version}" ]; then
+        	echo "PACKAGE_VERSION not found in config.h" >&2
+        	exit 1
+        fi
+        name="lbbs-${version}-${{ matrix.name }}"
+
+        host="$(uname -srm)"
+        if [ "$(uname -s)" = Darwin ]; then
+        	host="${host} (macOS $(sw_vers -productVersion))"
+        fi
+
+        {
+        	echo "Package:  ${name}.tar.gz"
+        	echo "Tag:      ${GITHUB_REF_NAME}"
+        	echo "Commit:   ${GITHUB_SHA}"
+        	echo "Built:    $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        	echo "Host:     ${host}"
+        	echo "Compiler: $(cc --version | head -n 1)"
+        	echo
+        	echo "Configure:"
+        	echo "  ./configure --prefix=${INSTALL_PREFIX} ${{ matrix.configure_flags }}"
+        	echo
+        	echo "Compiled in:"
+        	# bbsd reports to stderr
+        	"${root}/bin/bbsd" -C 2>&1 | sed 's/^/  /'
+        	echo
+        	echo "Shared library dependencies:"
+        	for module in "${root}"/bin/bbsd "${root}"/lib/libbbs.so.*.* "${root}"/game/so/libgame.so.*.*; do
+        		[ -f "${module}" ] || continue
+        		echo "  ${module#"${root}/"}"
+        		if [ "$(uname -s)" = Darwin ]; then
+        			otool -L "${module}" | tail -n +2 | sed 's/^/    /'
+        		else
+        			ldd "${module}" | sed 's/^/    /'
+        		fi
+        	done
+        	echo
+        	echo "Unpack at / to keep the compiled in prefix, then follow INSTALL.md."
+        	echo "The host needs the en_US.UTF-8 locale, which bbsd selects on startup."
+        	if [ "$(uname -s)" = Darwin ]; then
+        		echo "The Homebrew formulae listed above must be installed at the same prefix (/opt/homebrew)."
+        	fi
+        } > "${root}/BUILD-INFO.txt"
+
+        tar -czf "${name}.tar.gz" -C "${PACKAGE_ROOT}" .
+        if command -v sha256sum >/dev/null; then
+        	sha256sum "${name}.tar.gz" > "${name}.tar.gz.sha256"
+        else
+        	shasum -a 256 "${name}.tar.gz" > "${name}.tar.gz.sha256"
+        fi
+        ls -l "${name}.tar.gz" "${name}.tar.gz.sha256"
+        echo "Members: $(tar -tzf "${name}.tar.gz" | wc -l)"
+
+    - name: Show the build info
+      run: cat "${PACKAGE_ROOT}${INSTALL_PREFIX}/BUILD-INFO.txt"
+
+    - name: Upload the binary package
+      uses: actions/upload-artifact@v7
+      with:
+        name: release-${{ matrix.name }}
+        path: |
+          lbbs-*.tar.gz
+          lbbs-*.tar.gz.sha256
+
+  release:
+
+    name: publish
+    needs: [source, binary]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # Allows the action to create and write to the release
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Download the release assets
+      uses: actions/download-artifact@v8
+      with:
+        pattern: release-*
+        merge-multiple: true
+        path: assets
 
     - name: Create Release and Upload Assets
       uses: softprops/action-gh-release@v2
@@ -40,4 +203,5 @@ jobs:
         draft: true
         prerelease: true
         files: |
-          lbbs-*.tar.gz
+          assets/lbbs-*.tar.gz
+          assets/lbbs-*.tar.gz.sha256
