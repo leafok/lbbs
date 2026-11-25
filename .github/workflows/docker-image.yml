@@ -59,3 +59,18 @@ jobs:
         # scope keeps the layers of the two architectures from evicting each other
         cache-from: type=gha,scope=bbsd-${{ matrix.arch }}
         cache-to: type=gha,mode=max,scope=bbsd-${{ matrix.arch }}
+
+  # The matrix reports one check per architecture and those names change whenever an
+  # architecture is added, so this job is the stable one to mark as required.
+  finalize:
+
+    name: all builds succeeded
+    needs: build
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check the matrix result
+        run: |
+          echo "build matrix result: ${{ needs.build.result }}"
+          test "${{ needs.build.result }}" = "success"
