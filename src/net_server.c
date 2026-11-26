@@ -69,7 +69,7 @@
 
 enum _net_server_constant_t
 {
-	SOCKET_LISTEN_BACKLOG = 20,
+	SOCKET_LISTEN_BACKLOG = 1024, // the accept loop forks synchronously, so a shallow queue drops SYNs on a login burst
 	WAIT_CHILD_PROCESS_EXIT_TIMEOUT = 15, // second
 	WAIT_CHILD_PROCESS_KILL_TIMEOUT = 1, // second
 
