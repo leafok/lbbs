@@ -91,8 +91,8 @@ static void test_constants(void)
 	check_int(FILE_PATH_LEN, 4096, "FILE_PATH_LEN is 4096");
 	check_int(FILE_NAME_LEN, 256, "FILE_NAME_LEN is 256");
 	check_int(TAB_SIZE, 4, "TAB_SIZE is 4");
-	check_int(MAX_CLIENT_LIMIT, 2000, "MAX_CLIENT_LIMIT is 2000");
-	check_int(MAX_CLIENT_PER_IP_LIMIT, 1000, "MAX_CLIENT_PER_IP_LIMIT is 1000");
+	check_int(MAX_CLIENT_LIMIT, 10000, "MAX_CLIENT_LIMIT is 10000");
+	check_int(MAX_CLIENT_PER_IP_LIMIT, 10000, "MAX_CLIENT_PER_IP_LIMIT is 10000");
 	check_int(MAX_CLIENT_PER_IP_LIMIT <= MAX_CLIENT_LIMIT, 1, "the per-IP cap fits inside the global cap");
 	check_int(IP_ADDR_LEN, 50, "IP_ADDR_LEN is 50");
 	check_int(MAX_EVENTS, 10, "MAX_EVENTS is 10");

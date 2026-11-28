@@ -26,8 +26,8 @@ enum common_constant_t
     TAB_SIZE = 4,
 
     // Network
-    MAX_CLIENT_LIMIT = 2000,
-    MAX_CLIENT_PER_IP_LIMIT = 1000,
+    MAX_CLIENT_LIMIT = 10000,
+    MAX_CLIENT_PER_IP_LIMIT = 10000,
     IP_ADDR_LEN = 50,
     MAX_EVENTS = 10,
 };

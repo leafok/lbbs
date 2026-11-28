@@ -269,7 +269,7 @@ static void test_client_limits_clamp(void)
 	reset_globals();
 
 	// Anything outside (0, MAX_CLIENT_LIMIT] resets to MAX_CLIENT_LIMIT
-	write_conf("bbs_max_client 5000\n");
+	write_conf("bbs_max_client 20000\n");
 	load_conf(CONF_FILE);
 	check_int(BBS_max_client, MAX_CLIENT_LIMIT, "bbs_max_client above the cap resets to the cap");
 
